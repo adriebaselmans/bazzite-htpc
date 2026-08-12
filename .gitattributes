@@ -1,0 +1,8 @@
+# This repo is authored on Windows but every file in it runs on Linux. A .just
+# file checked out with CRLF breaks its shebang recipes with an unhelpful
+# "bad interpreter" error, so pin the line endings rather than depending on
+# whatever core.autocrlf happens to be set to on the machine editing it.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
