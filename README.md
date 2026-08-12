@@ -55,15 +55,37 @@ If Secure Boot was off during install, do it afterwards with
 `ujust enroll-secure-boot-key` (same password), then enable Secure Boot in the
 BIOS.
 
-### 4. Rebase onto this image
+### 4. Rebase onto this image — two steps
 
-First boot lands in Game Mode. Switch to Desktop Mode (Steam menu → Switch to
-Desktop), open a terminal:
+First boot lands in Game Mode. You do **not** need Desktop Mode for this: press
+`Ctrl`+`Alt`+`F4` for a TTY and log in. That also sidesteps two current Bazzite
+bugs — a Steam update loop that can trap you in Game Mode, and "Switch to
+Desktop Mode" going missing from the Steam menu. (`Ctrl`+`Alt`+`F1` gets you
+back to the graphical session.)
+
+Skip any offered system update first; the rebase replaces the whole image
+anyway.
+
+The rebase has to happen twice, because a stock Bazzite install trusts only
+Universal Blue's keys and cannot verify an image signed with this repo's key
+until that key is present. The first rebase is what installs it:
+
+```bash
+rpm-ostree rebase ostree-unverified-registry:ghcr.io/adriebaselmans/bazzite-htpc:latest
+systemctl reboot
+```
+
+Unverified is safe here — it is your own image, and this step is what writes
+your public key into `/etc/containers/policy.json`. After the reboot, switch to
+the signed reference so every later update is verified:
 
 ```bash
 rpm-ostree rebase ostree-image-signed:docker://ghcr.io/adriebaselmans/bazzite-htpc:latest
 systemctl reboot
 ```
+
+Stopping after the first command works, but leaves the machine updating without
+signature verification — which is the whole point of the cosign setup.
 
 From then on the machine updates along with this image, and the previous version
 stays in the boot menu to roll back to.
