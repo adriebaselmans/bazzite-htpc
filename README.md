@@ -21,38 +21,82 @@ The setup is split across two layers, and the split is not cosmetic:
 straight into Gamescope Game Mode. Deliberately not a `-nvidia` variant:
 Waydroid does not work on Nvidia at all, which would take SmartTube with it.
 
-## First-time setup
+## Installing on a machine
 
-### 1. Container signing (required)
+### 1. Write the USB (from any OS)
 
-The `cosign.pub` in this repo is still the upstream template's key. Replace it
-with your own or signature verification will fail at rebase time:
+Download the ISO from [bazzite.gg](https://bazzite.gg) — its hardware selector
+serves the right build; take the **handheld/HTPC** one (`-deck`), not the plain
+desktop edition and not an `-nvidia` variant.
 
-```bash
-cosign generate-key-pair
+Write it with Rufus, Ventoy or `dd`. With Rufus, **pick "DD Image" mode** when
+prompted: in ISO mode the stick does not show up as a boot option at all, which
+looks like a BIOS problem rather than a flashing problem.
+
+### 2. Install
+
+Boot the USB and run the installer. **Attach a physical USB keyboard** — the
+Secure Boot and disk-encryption prompts do not accept an on-screen one.
+
+### 3. Enrol the Secure Boot key
+
+On the reboot after install a blue MokManager screen appears. Choose **Enroll
+MOK** and enter:
+
+```
+universalblue
 ```
 
-Put the generated **private** key in the repo's GitHub secret `SIGNING_SECRET`
-(Settings → Secrets and variables → Actions), and commit the generated
-`cosign.pub`. Never commit `cosign.key`.
+Nothing is echoed as you type (deliberate), and the prompt is always **QWERTY**
+regardless of your own layout. Skip this with Secure Boot enabled in the BIOS
+and Bazzite will not boot at all.
 
-### 2. Enable Actions
+If Secure Boot was off during install, do it afterwards with
+`ujust enroll-secure-boot-key` (same password), then enable Secure Boot in the
+BIOS.
 
-Actions are disabled by default on a fresh repo — enable them under the Actions
-tab. Pushing then builds and publishes to `ghcr.io/<user>/bazzite-htpc`.
+### 4. Rebase onto this image
 
-### 3. Rebase the machine
-
-Install Bazzite normally, then:
+First boot lands in Game Mode. Switch to Desktop Mode (Steam menu → Switch to
+Desktop), open a terminal:
 
 ```bash
-rpm-ostree rebase ostree-image-signed:docker://ghcr.io/<user>/bazzite-htpc:latest
+rpm-ostree rebase ostree-image-signed:docker://ghcr.io/adriebaselmans/bazzite-htpc:latest
 systemctl reboot
-ujust setup-htpc
 ```
 
 From then on the machine updates along with this image, and the previous version
 stays in the boot menu to roll back to.
+
+### 5. Set up the HTPC layer
+
+**Start Kodi once first** — otherwise `~/.var/app/tv.kodi.Kodi` does not exist
+yet and the xstreamflex step stops with an error. Then:
+
+```bash
+ujust setup-htpc
+```
+
+Sanity check that the image carries what it should: `ujust --list` should show
+`setup-htpc`.
+
+## Forking this repo
+
+The signing key here belongs to this repo. If you fork it, generate your own or
+the build fails with *"Public key './cosign.pub' does not match private key"*:
+
+```bash
+cosign generate-key-pair          # leave the passphrase empty
+gh secret set SIGNING_SECRET < cosign.key
+```
+
+Commit the generated `cosign.pub`; never commit `cosign.key` (it is gitignored).
+Use `gh secret set` rather than pasting into the web UI — a truncated or
+whitespace-mangled paste produces *"Unable to find private/public key pair"*,
+which reads like a missing secret rather than a corrupted one.
+
+Actions are disabled by default on a fresh fork; enable them under the Actions
+tab.
 
 ## Commands
 
