@@ -32,6 +32,11 @@ modules:
   # Ships files/justfiles/*.just as `ujust` commands. This is what carries every
   # step that cannot live in an image: Waydroid downloads its Android images at
   # init time, and Steam/Kodi configuration lives in $HOME.
+  #
+  # validate is off by default, but a justfile syntax error is otherwise only
+  # discovered by running `ujust` on the finished machine - the build happily
+  # ships a broken recipe. Worth failing the build over instead.
   - type: justfiles
+    validate: true
 
   - type: signing

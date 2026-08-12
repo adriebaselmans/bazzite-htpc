@@ -55,19 +55,22 @@ htpc-smarttube:
     # the same version carries the bare tag. Assets are named
     # SmartTube_stable_<version>_<arch>.apk - we want arm64-v8a, translated by
     # the ARM layer in the Android TV image.
-    url="$(curl -fsSL "{{SMARTTUBE_API}}" | python3 -c '
-import json, sys
-releases = json.load(sys.stdin)
-for release in releases:
-    if not release.get("tag_name", "").endswith("s"):
-        continue
-    for asset in release.get("assets", []):
-        name = asset.get("name", "")
-        if "_stable_" in name and name.endswith("_arm64-v8a.apk"):
-            print(asset["browser_download_url"])
-            sys.exit(0)
-sys.exit("no stable arm64-v8a asset found")
-')"
+    # Kept to grep/sed rather than a multi-line python heredoc: every line of a
+    # just recipe must stay indented, and an unindented heredoc silently ends
+    # the recipe body - which just then reports as a syntax error on the first
+    # line of the embedded script.
+    #
+    # The API returns releases newest-first, and only stable builds carry
+    # "_stable_" in their asset names, so the first match is the newest stable
+    # arm64 APK.
+    url="$(curl -fsSL "{{SMARTTUBE_API}}" \
+        | grep -o '"browser_download_url": *"[^"]*_stable_[^"]*_arm64-v8a\.apk"' \
+        | head -1 | sed 's/.*"\(https[^"]*\)"$/\1/')"
+
+    if [[ -z "$url" ]]; then
+        echo "Found no stable arm64-v8a SmartTube asset." >&2
+        exit 1
+    fi
 
     echo "==> Installing $(basename "$url")"
     tmp="$(mktemp -d)"
