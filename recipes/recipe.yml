@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+# image will be published to ghcr.io/<user>/<name>
+name: bazzite-htpc
+description: >-
+  Bazzite deck (Steam Game Mode) as a living-room box: Kodi with the xstreamflex
+  add-on for IPTV, and SmartTube via Waydroid's Android TV image.
+
+# bazzite-deck is the Handheld/HTPC variant - KDE + Gamescope Game Mode, Mesa.
+# Deliberately NOT a -nvidia variant: Waydroid does not work on Nvidia at all,
+# which would take SmartTube with it.
+base-image: ghcr.io/ublue-os/bazzite-deck
+image-version: stable
+
+modules:
+  - type: files
+    files:
+      - source: system
+        destination: /
+
+  # Kodi is baked in rather than installed by hand. Flatseal is here for the one
+  # case the sandbox actually gets in the way: pointing the .strm library at a
+  # NAS or external disk outside ~/.var/app/tv.kodi.Kodi.
+  - type: default-flatpaks
+    configurations:
+      - notify: true
+        scope: system
+        install:
+          - tv.kodi.Kodi
+          - com.github.tchx84.Flatseal
+
+  # Ships files/justfiles/*.just as `ujust` commands. This is what carries every
+  # step that cannot live in an image: Waydroid downloads its Android images at
+  # init time, and Steam/Kodi configuration lives in $HOME.
+  - type: justfiles
+
+  - type: signing
