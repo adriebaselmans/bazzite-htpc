@@ -161,9 +161,17 @@ htpc-steam-shortcut:
             || echo "    steamtinkerlaunch failed - add it by hand (see below)."
     else
         echo "==> steamtinkerlaunch not found; add these by hand (one-time):"
-        echo "    Desktop mode > Steam > Games > Add a Non-Steam Game > Browse"
-        echo "    Kodi     - Target: /usr/bin/flatpak            Options: run tv.kodi.Kodi"
-        echo "    Waydroid - Target: /usr/bin/waydroid-launcher"
+        echo "    Desktop mode > Steam > Games > Add a Non-Steam Game"
+        echo ""
+        echo "    Kodi     - just tick it in the list Steam shows. It exports a"
+        echo "               .desktop file, so this gets the name, the icon and"
+        echo "               the right flatpak command for free. Browsing to"
+        echo "               /usr/bin/flatpak instead gives a tile called"
+        echo "               'flatpak' with no icon and needs Launch Options"
+        echo "               'run tv.kodi.Kodi' set by hand."
+        echo "    Waydroid - not in that list, so: Browse, switch the filter to"
+        echo "               All Files, and pick /usr/bin/waydroid-launcher."
+        echo ""
         echo "    Neither appears in Game Mode until you do this."
     fi
 
