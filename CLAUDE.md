@@ -65,6 +65,12 @@ controller profiles.
   — that is Watchdog dumping every process, not a boot in progress. Fix is
   `pm disable <pkg>` from `waydroid shell`, never uninstall (that black-screens).
 
+- **Android's own shutdown is not the way out of Waydroid.** The launcher wraps
+  Waydroid in `cage`; powering Android off from the TV UI leaves cage running
+  with no client, which presents as a black screen that ignores the remote. The
+  exit is Steam button → Exit Game (Steam owns `waydroid-launcher` as a running
+  game, and the launcher stops the container once cage dies). `pkill cage`
+  recovers it without a reboot.
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.

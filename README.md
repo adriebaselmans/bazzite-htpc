@@ -211,6 +211,14 @@ All of them are safe to re-run.
   hang. The launcher also accepts arguments
   (`waydroid-launcher app launch org.smarttube.stable`) if you want a one-tap
   SmartTube tile — but see the back-button caveat below.
+- **Leave Waydroid with the Steam button → Exit Game, never Android's own
+  shutdown.** Powering Android off from the TV UI stops Android but leaves
+  `cage` — the kiosk compositor the launcher wraps Waydroid in — running with no
+  client. That is a black screen that no longer responds to the remote, because
+  the thing the remote was talking to is gone. Steam treats
+  `waydroid-launcher` as a running game, so *Exit Game* closes cage, and the
+  launcher then stops the container itself. If you do end up on the black
+  screen, `pkill cage` from a terminal is enough; a reboot is not needed.
 - **SmartTube ships no x86_64 APK** (only arm64-v8a, armeabi-v7a, universal and
   32-bit x86). The Android TV image bundles ARM translation, which is what makes
   the arm64 build work here.
