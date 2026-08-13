@@ -201,13 +201,14 @@ All of them are safe to re-run.
   `Failed to get service waydroidplatform` forever. Switching the image also
   means wiping `~/.local/share/waydroid/data` (as root), or the new Android
   hangs on the old userdata — `IP address: UNKNOWN` is the symptom.
-- **Waydroid is verified working here** (2026-08-13): SmartTube installs and its
-  arm64 build runs under the image's ARM translation. `ujust
-  htpc-steam-shortcut` adds Bazzite's `/usr/bin/waydroid-launcher` as a Steam
-  target; it runs Waydroid inside `cage`, which nests under `gamescope`, and its
-  `pkexec` calls are already allowed for the `wheel` group so nothing prompts
-  for a password. Clicking that tile from Game Mode is the one step still not
-  physically tested. The launcher also accepts arguments
+- **Waydroid under Game Mode is verified working** (2026-08-13), end to end:
+  the Steam tile brings up the Android TV home screen and SmartTube plays from
+  there. `ujust htpc-steam-shortcut` adds Bazzite's
+  `/usr/bin/waydroid-launcher` as the Steam target; it runs Waydroid inside
+  `cage`, which nests under `gamescope`, and its `pkexec` calls are already
+  allowed for the `wheel` group so nothing prompts for a password. Give the
+  first launch after a boot a minute or two — that is Android booting, not a
+  hang. The launcher also accepts arguments
   (`waydroid-launcher app launch org.smarttube.stable`) if you want a one-tap
   SmartTube tile — but see the back-button caveat below.
 - **SmartTube ships no x86_64 APK** (only arm64-v8a, armeabi-v7a, universal and

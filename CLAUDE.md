@@ -81,26 +81,25 @@ controller profiles.
 
 ## Still unverified
 
-**Waydroid itself is now verified on this machine** (2026-08-13): container
-boots, `waydroidplatform` resolves, SmartTube installs and its **arm64** build
-actually executes under the image's ARM translation layer. See the two traps
-below — getting here cost a full session.
+**The Waydroid path is fully verified on this machine** (2026-08-13), end to
+end: container boots, `waydroidplatform` resolves, SmartTube installs, its
+**arm64** build executes under the image's ARM translation layer, and the Steam
+tile launches the Android TV home screen **from Game Mode** with SmartTube
+working from there. Nothing about this stack is speculative any more — see the
+traps above for what it cost to get here.
 
-What is still untested is only the last hop: clicking the Steam tile **while in
-Game Mode**. Everything that would block it has been checked and does not:
+Two mechanics worth keeping, since forum posts get both wrong:
 `/usr/bin/waydroid-launcher` runs Waydroid inside `cage`, a kiosk compositor
-that nests under gamescope, and the four `pkexec` calls it makes are covered by
-`/usr/share/polkit-1/rules.d/30-waydroid.rules` (wheel → YES, no password
-prompt). Note the launcher **does** take arguments — with none it runs
-`show-full-ui`, otherwise it `exec waydroid "$@"` — so
+that nests happily under gamescope, and its four `pkexec` calls are covered by
+`/usr/share/polkit-1/rules.d/30-waydroid.rules` (wheel → YES), so nothing
+prompts for a password. The launcher also **does** take arguments — with none
+it runs `show-full-ui`, otherwise it `exec waydroid "$@"` — so
 `waydroid-launcher app launch org.smarttube.stable` is a legitimate one-tap
-Steam target, contradicting the forum claim that custom commands after the
-launcher don't work. Untested caveat: this repo already documents that the back
-button misbehaves when SmartTube is started via `waydroid app launch` rather
-than from the TV launcher, so the safe default shortcut stays the plain
-launcher.
+Steam target. The default shortcut stays the plain launcher anyway, because
+SmartTube started via `app launch` has the broken back button documented in the
+README.
 
-The 40 FPS suggestion for demanding Cemu titles comes from EmuDeck's docs,
+The one thing left unmeasured is Cemu. The 40 FPS suggestion for demanding Cemu titles comes from EmuDeck's docs,
 calibrated to Steam Deck's (RDNA2, 8 CU) iGPU, not from a measurement on this
 hardware. The Radeon 780M is the same RDNA3, 12-CU silicon as the Ryzen Z1
 Extreme's iGPU (ROG Ally), which comfortably outperforms Steam Deck in Cemu
