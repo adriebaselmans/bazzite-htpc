@@ -34,6 +34,25 @@ modules:
           # happen. EmuDeck is installed via bazzite-portal; see
           # files/justfiles/emulation.just.
 
+  # gh is baked in at build time, which is not the same thing as the
+  # `rpm-ostree` layering this project avoids: that warning is about installing
+  # on the running machine, where a layered package can block OS upgrades until
+  # it is removed. Here it lands in the image itself, so there is nothing
+  # layered on the client.
+  #
+  # Homebrew was the obvious alternative and was rejected: brew installs into
+  # $HOME, so gh would not survive a reinstall of the box, and BlueBuild's brew
+  # module only installs Homebrew itself - it takes no package list.
+  #
+  # Fedora 43 carries 2.87.3, older than Homebrew's build but fine for
+  # `gh auth login`, which is the point: it registers itself as a git
+  # credential helper so pushes from this machine stop needing a GUI password
+  # prompt (ksshaskpass cannot run from a plain terminal session).
+  - type: dnf
+    install:
+      packages:
+        - gh
+
   # Ships files/justfiles/*.just as `ujust` commands. This is what carries every
   # step that cannot live in an image: Waydroid downloads its Android images at
   # init time, and Steam/Kodi configuration lives in $HOME.
