@@ -102,51 +102,61 @@ ujust setup-htpc
 Sanity check that the image carries what it should: `ujust --list` should show
 `setup-htpc`.
 
-## Wii U emulation (Cemu)
-
-Added alongside the HTPC setup, not on top of it: Cemu and Steam ROM Manager
-ship through the same `default-flatpaks` mechanism as Kodi, so they survive a
-rebase and touch nothing that already works.
+## Wii U emulation (Cemu, via EmuDeck)
 
 ```bash
-ujust setup-emulation     # directories + sandbox access
+ujust setup-emulation     # installs EmuDeck through Bazzite's own portal
+ujust emulation-paths     # where ROMs, config, keys and saves live
 ujust emulation-tune      # performance checklist for the 780M
-ujust emulation-steam     # add games to Steam, with artwork
+ujust emulation-steam     # getting games into Steam with artwork
 ```
 
-**Cemu comes from Flathub, not from EmuDeck.** EmuDeck is the more established
-route, but it installs Cemu as an AppImage — and in May 2026 Cemu's AppImage and
-Ubuntu zip release assets were replaced with a credential stealer via a stolen
-maintainer token. Windows, macOS and Flatpak were unaffected. That channel has
-been restored, but Flathub builds and signs its own binaries, which fits an
-immutable host better.
+EmuDeck is installed via **`bazzite-portal`**, which ships with Bazzite itself —
+there is no custom installer here. EmuDeck then owns the emulation stack: it
+installs Cemu, creates `~/Emulation`, and bundles its own Steam ROM Manager.
+
+Because it owns that stack, this image deliberately does **not** also ship Cemu
+or Steam ROM Manager as flatpaks. Installing both leaves you with two Cemus and
+two SRMs holding separate configs, which is exactly how duplicate Steam
+shortcuts happen.
 
 ### Where things live
 
-Cemu here is a flatpak, so its paths are **not** the native ones EmuDeck's docs
-describe:
-
 | What | Where |
 | --- | --- |
-| Config, controller profiles | `~/.var/app/info.cemu.Cemu/config/Cemu/` |
-| Graphic packs, shader cache, `keys.txt` | `~/.var/app/info.cemu.Cemu/data/Cemu/` |
 | Your game dumps | `~/Emulation/roms/wiiu/roms` |
 | Saves / persistent storage | `~/Emulation/roms/wiiu/mlc01` |
-| Steam shortcuts | Steam's own `shortcuts.vdf`, written by Steam ROM Manager |
+| Cemu config, controller profiles | `~/.config/Cemu/` |
+| Graphic packs, shader cache, `keys.txt` | `~/.local/share/Cemu/` |
+| EmuDeck itself | `~/Emulation/tools/` |
+| Steam shortcuts | Steam's `shortcuts.vdf`, written by Steam ROM Manager |
 
 No game content, keys or BIOS files ship here or are downloaded by any recipe —
-provide your own dumps.
+provide your own dumps. Prefer decrypted `.wua`/`.rpx`; Cemu is moving away from
+encrypted `.wud`/`.wux`.
+
+### Known trade-off: Cemu's AppImage channel
+
+EmuDeck installs Cemu as an **AppImage**. In May 2026 Cemu's AppImage and Ubuntu
+zip release assets on GitHub were replaced with a credential stealer, uploaded by
+an account with no prior contribution to the repo; the Windows build, the macOS
+build, the git tag and the Flathub Flatpak were all untouched
+([cemu-project/Cemu#1911](https://github.com/cemu-project/Cemu/issues/1911)).
+Those assets have since been restored.
+
+Flathub builds and signs from source, so that channel remains the safer one, but
+EmuDeck does not support a Flatpak Cemu yet
+([dragoonDorise/EmuDeck#1140](https://github.com/dragoonDorise/EmuDeck/issues/1140)).
+This setup accepts that trade-off in exchange for EmuDeck's integration.
 
 ### Two things that bite
 
-A sandboxed flatpak cannot read `~/Emulation` at all. `setup-emulation` issues
-the `flatpak override` that grants it; without that Cemu shows an **empty game
-list rather than a permission error**, which is easy to misread as bad dumps.
+**Close Steam completely before running Steam ROM Manager.** It edits Steam's
+shortcuts file directly; with Steam running, your new entries are discarded when
+it exits.
 
-Steam ROM Manager rewrites Steam's shortcuts file, so **close Steam completely
-before running it** — with Steam open, your new entries are overwritten when it
-exits. And never enable Proton compatibility on Cemu or the games it adds; this
-is a native Linux build and Proton breaks it.
+**Never enable Proton compatibility** on Cemu or on the games SRM adds — this is
+a native Linux build and Proton breaks it.
 
 Performance settings are a printed checklist rather than a generated
 `settings.xml`: a malformed one stops Cemu from starting, and overwriting an

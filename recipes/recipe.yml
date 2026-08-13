@@ -28,13 +28,11 @@ modules:
         install:
           - tv.kodi.Kodi
           - com.github.tchx84.Flatseal
-          # Cemu from Flathub rather than EmuDeck's AppImage: in May 2026 Cemu's
-          # AppImage and Ubuntu zip release assets were swapped for a credential
-          # stealer via a stolen maintainer token, while Flatpak was untouched.
-          # Flathub also builds and signs its own binaries, which fits an
-          # immutable host better. See files/justfiles/emulation.just.
-          - info.cemu.Cemu
-          - com.steamgriddb.steam-rom-manager
+          # Deliberately no Cemu or Steam ROM Manager here: EmuDeck installs and
+          # manages both, and shipping flatpak copies alongside gives two of each
+          # with separate configs - which is how duplicate Steam shortcuts
+          # happen. EmuDeck is installed via bazzite-portal; see
+          # files/justfiles/emulation.just.
 
   # Ships files/justfiles/*.just as `ujust` commands. This is what carries every
   # step that cannot live in an image: Waydroid downloads its Android images at
