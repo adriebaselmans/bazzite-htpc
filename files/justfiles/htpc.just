@@ -5,8 +5,14 @@
 # and Kodi's configuration lives in $HOME. Everything below is re-runnable, so
 # after a rebase or a reinstall you just run `ujust setup-htpc` again.
 
-WAYDROID_OTA_SYSTEM := "https://waydroid-atv.github.io/ota/a16-tv/system"
-WAYDROID_OTA_VENDOR := "https://waydroid-atv.github.io/ota/a16-tv/vendor"
+# Android 13 (a13-tv), NOT a16-tv. Android 16 needs the `aidl6` servicemanager
+# protocol, and the host's libgbinder (1.1.43 on Fedora 43) only implements
+# aidl..aidl4 - so the container boots fine but the host can never resolve the
+# `waydroidplatform` service, and every waydroid command retries forever.
+# Nothing in waydroid.cfg fixes that; it needs a newer libgbinder. Do not bump
+# this to a15/a16 without first checking `strings libgbinder.so.1 | grep Aidl`.
+WAYDROID_OTA_SYSTEM := "https://waydroid-atv.github.io/ota/a13-tv/system"
+WAYDROID_OTA_VENDOR := "https://waydroid-atv.github.io/ota/a13-tv/vendor"
 XSTREAMFLEX_REPO := "https://github.com/adriebaselmans/xstreamflex"
 SMARTTUBE_API := "https://api.github.com/repos/yuliskov/SmartTube/releases?per_page=30"
 
@@ -124,15 +130,15 @@ htpc-xstreamflex ref="main":
     echo "==> Done. Kodi will pick it up on next start."
     echo "    script.module.requests installs itself from Kodi's own repo."
 
-# Add Kodi to Steam so it is reachable from Game Mode.
+# Add Kodi and Waydroid to Steam so both are reachable from Game Mode.
 htpc-steam-shortcut:
     #!/usr/bin/bash
     set -euo pipefail
 
     # Steam stores non-Steam shortcuts in a *binary* shortcuts.vdf. Editing that
     # from a script is genuinely fiddly and easy to corrupt, so this defers to
-    # steamtinkerlaunch when it is present and otherwise tells you to do the one
-    # manual step rather than pretending it worked.
+    # steamtinkerlaunch when it is present and otherwise tells you to do the two
+    # manual steps rather than pretending it worked.
     if command -v steamtinkerlaunch >/dev/null 2>&1; then
         echo "==> Adding Kodi via steamtinkerlaunch..."
         steamtinkerlaunch addnonsteamgame \
@@ -140,12 +146,25 @@ htpc-steam-shortcut:
             --exepath="/usr/bin/flatpak" \
             --launchoptions="run tv.kodi.Kodi" \
             || echo "    steamtinkerlaunch failed - add it by hand (see below)."
+
+        # /usr/bin/waydroid-launcher is Bazzite's own wrapper: it runs Waydroid
+        # inside cage, which nests under gamescope, and its pkexec calls are
+        # already allowed for the wheel group so nothing prompts in Game Mode.
+        # With no arguments it runs show-full-ui, so this lands on the Android
+        # TV home screen; open SmartTube from there. It does accept arguments
+        # (app launch org.smarttube.stable) for a one-tap tile, but SmartTube
+        # started that way has a broken back button - hence the plain launcher.
+        echo "==> Adding Waydroid via steamtinkerlaunch..."
+        steamtinkerlaunch addnonsteamgame \
+            --appname="Waydroid" \
+            --exepath="/usr/bin/waydroid-launcher" \
+            || echo "    steamtinkerlaunch failed - add it by hand (see below)."
     else
-        echo "==> steamtinkerlaunch not found; add Kodi by hand (one-time):"
+        echo "==> steamtinkerlaunch not found; add these by hand (one-time):"
         echo "    Desktop mode > Steam > Games > Add a Non-Steam Game > Browse"
-        echo "    Target:  /usr/bin/flatpak"
-        echo "    Options: run tv.kodi.Kodi"
-        echo "    Flatpaks do not appear in Game Mode until you do this."
+        echo "    Kodi     - Target: /usr/bin/flatpak            Options: run tv.kodi.Kodi"
+        echo "    Waydroid - Target: /usr/bin/waydroid-launcher"
+        echo "    Neither appears in Game Mode until you do this."
     fi
 
 # Pair a Bluetooth remote or controller and point at the Kodi keymap.

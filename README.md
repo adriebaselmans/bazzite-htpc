@@ -188,19 +188,28 @@ tab.
 | `ujust htpc-waydroid` | Init Waydroid with the Android TV image (`ujust htpc-waydroid 1` forces a clean re-init) |
 | `ujust htpc-smarttube` | Install the latest **stable** SmartTube (arm64) |
 | `ujust htpc-xstreamflex` | Build and install the xstreamflex add-on into the Kodi flatpak |
-| `ujust htpc-steam-shortcut` | Add Kodi to Steam so Game Mode can see it |
+| `ujust htpc-steam-shortcut` | Add Kodi and Waydroid to Steam so Game Mode can see them |
 | `ujust htpc-remote` | Pair a Bluetooth remote/controller |
 
 All of them are safe to re-run.
 
 ## Known caveats
 
-- **Waydroid under Game Mode is the biggest unknown.** Game Mode runs under
-  `gamescope`, a nested Wayland compositor, while Waydroid wants a Wayland
-  session of its own. Standalone Waydroid on Bazzite is documented and
-  supported; launching SmartTube *from within* Game Mode is not verified. Test
-  this early. Fallback: run Waydroid from desktop mode and keep Game Mode for
-  games.
+- **Use the `a13-tv` image, never `a16-tv`.** Android 16 needs the `aidl6`
+  servicemanager protocol and the host's libgbinder only speaks up to `aidl4`,
+  so the container boots but every waydroid command retries
+  `Failed to get service waydroidplatform` forever. Switching the image also
+  means wiping `~/.local/share/waydroid/data` (as root), or the new Android
+  hangs on the old userdata — `IP address: UNKNOWN` is the symptom.
+- **Waydroid is verified working here** (2026-08-13): SmartTube installs and its
+  arm64 build runs under the image's ARM translation. `ujust
+  htpc-steam-shortcut` adds Bazzite's `/usr/bin/waydroid-launcher` as a Steam
+  target; it runs Waydroid inside `cage`, which nests under `gamescope`, and its
+  `pkexec` calls are already allowed for the `wheel` group so nothing prompts
+  for a password. Clicking that tile from Game Mode is the one step still not
+  physically tested. The launcher also accepts arguments
+  (`waydroid-launcher app launch org.smarttube.stable`) if you want a one-tap
+  SmartTube tile — but see the back-button caveat below.
 - **SmartTube ships no x86_64 APK** (only arm64-v8a, armeabi-v7a, universal and
   32-bit x86). The Android TV image bundles ARM translation, which is what makes
   the arm64 build work here.

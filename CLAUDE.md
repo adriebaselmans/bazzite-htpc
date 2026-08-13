@@ -43,6 +43,28 @@ controller profiles.
 
 ## Traps that cost real time here
 
+- **Never use the `a16-tv` (Android 16) Waydroid image on this stack.** Android
+  16 requires the `aidl6` servicemanager protocol; the host's libgbinder
+  (1.1.43 on Fedora 43) only implements `Aidl`…`Aidl4`, and waydroid 1.6.2's
+  `protocol.py` maps everything ≥ API 33 to `aidl3` anyway. The failure looks
+  like a slow boot and is not one: the container reports RUNNING, but every
+  waydroid command prints `Failed to get service waydroidplatform` forever
+  because the host is speaking a protocol the image's servicemanager does not
+  answer. No `waydroid.cfg` edit fixes it. `a13-tv` (LineageOS 20 / API 33) is
+  the working choice; verify with
+  `strings /usr/lib64/libgbinder.so.1 | grep Aidl` before ever bumping it.
+- **Changing Android version means wiping `~/.local/share/waydroid/data`.**
+  `waydroid init -f` replaces the images but keeps the userdata, so a downgrade
+  boots Android 13 on Android 16's data and hangs before it even gets a DHCP
+  lease (`IP address: UNKNOWN` in `waydroid status` is the tell). The wipe needs
+  root — the subdirectories are owned by Android UIDs.
+- **A wedged Android boot can also be one ANR-looping app.** On the a16 image the
+  TV setup wizard (`com.google.android.tungsten.setupwraith`) ANR'd, crashed and
+  restarted every ~6s, which kept `system_server` permanently busy. The tell in
+  `logcat` is a long run of `ActivityManager: Collecting stacks for native pid …`
+  — that is Watchdog dumping every process, not a boot in progress. Fix is
+  `pm disable <pkg>` from `waydroid shell`, never uninstall (that black-screens).
+
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.
@@ -59,14 +81,32 @@ controller profiles.
 
 ## Still unverified
 
-Nobody has yet confirmed on the machine itself that **Waydroid works under Game
-Mode**. Game Mode runs under `gamescope`; Waydroid wants its own Wayland session.
-Standalone Waydroid on Bazzite is supported and documented, but SmartTube
-launching *from within* Game Mode is untested. Fallback: run Waydroid from
-Desktop Mode and keep Game Mode for games.
+**Waydroid itself is now verified on this machine** (2026-08-13): container
+boots, `waydroidplatform` resolves, SmartTube installs and its **arm64** build
+actually executes under the image's ARM translation layer. See the two traps
+below — getting here cost a full session.
 
-The 40 FPS suggestion for demanding Cemu titles comes from EmuDeck's docs, not
-from a measurement on this hardware.
+What is still untested is only the last hop: clicking the Steam tile **while in
+Game Mode**. Everything that would block it has been checked and does not:
+`/usr/bin/waydroid-launcher` runs Waydroid inside `cage`, a kiosk compositor
+that nests under gamescope, and the four `pkexec` calls it makes are covered by
+`/usr/share/polkit-1/rules.d/30-waydroid.rules` (wheel → YES, no password
+prompt). Note the launcher **does** take arguments — with none it runs
+`show-full-ui`, otherwise it `exec waydroid "$@"` — so
+`waydroid-launcher app launch org.smarttube.stable` is a legitimate one-tap
+Steam target, contradicting the forum claim that custom commands after the
+launcher don't work. Untested caveat: this repo already documents that the back
+button misbehaves when SmartTube is started via `waydroid app launch` rather
+than from the TV launcher, so the safe default shortcut stays the plain
+launcher.
+
+The 40 FPS suggestion for demanding Cemu titles comes from EmuDeck's docs,
+calibrated to Steam Deck's (RDNA2, 8 CU) iGPU, not from a measurement on this
+hardware. The Radeon 780M is the same RDNA3, 12-CU silicon as the Ryzen Z1
+Extreme's iGPU (ROG Ally), which comfortably outperforms Steam Deck in Cemu
+workloads — so the real ceiling here is probably above 40 FPS on demanding
+titles. But Cemu/BOTW performance is also cache- and CPU-bound, not just GPU,
+so treat this as "likely better" rather than a revised number until measured.
 
 ## Working style the user asked for
 
