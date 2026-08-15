@@ -1,8 +1,8 @@
 # bazzite-htpc — context for Claude
 
 A custom Bazzite image turning a mini-PC into a living-room box: HTPC (Kodi with
-the `xstreamflex` IPTV add-on, SmartTube via Waydroid) plus Wii U emulation
-(Cemu via EmuDeck), with Steam Game Mode as the shell.
+the `xstreamflex` IPTV add-on, SmartTube via Waydroid) plus Nintendo Switch
+emulation (Eden via EmuDeck), with Steam Game Mode as the shell.
 
 Built to replace an ageing NVIDIA Shield that had to be rebooted to keep
 streaming. Read `README.md` first — it carries the install path and the traps.
@@ -28,18 +28,8 @@ would take SmartTube with it. Never suggest an `-nvidia` base image variant.
 **Flatpak over `rpm-ostree` layering.** Bazzite's docs call layering a last
 resort — it can block OS upgrades until the package is removed.
 
-**EmuDeck over the Flathub Cemu Flatpak.** The user chose this deliberately after
-being told that Cemu's AppImage and Ubuntu zip release assets were replaced with
-a credential stealer in May 2026 (Flatpak was untouched, assets since restored).
-EmuDeck does not support a Flatpak Cemu yet. Do not quietly revisit this; it was
-an informed trade-off.
-
-**No Cemu or Steam ROM Manager flatpaks in the image.** EmuDeck installs both.
-Shipping duplicates causes duplicate Steam shortcuts.
-
-**Performance settings are a printed checklist, not a generated `settings.xml`.**
-A malformed one stops Cemu starting; overwriting an existing one discards
-controller profiles.
+**No emulator or Steam ROM Manager flatpaks in the image.** EmuDeck installs
+both. Shipping duplicates causes duplicate Steam shortcuts.
 
 ## Traps that cost real time here
 
@@ -71,6 +61,32 @@ controller profiles.
   exit is Steam button → Exit Game (Steam owns `waydroid-launcher` as a running
   game, and the launcher stops the container once cage dies). `pkill cage`
   recovers it without a reboot.
+
+- **EmuDeck 2.5.0's Eden installer is broken.** The Custom Install flow does not
+  actually download Eden when selected; the backend logs show `checkEdenBios:
+  command not found`, a function EmuDeck's own code calls but never defines
+  (upstream issue dragoonDorise/EmuDeck#1568, marked "Planned for 3.x"). The
+  fix is to download Eden's AppImage directly from
+  https://git.eden-emu.dev/eden-emu/eden/releases (pick the `-amd64-clang-pgo`
+  build, not `-steamdeck-` or `-rog-ally-`), place it in `~/Applications/`,
+  and `chmod +x` it — EmuDeck's launcher scripts already search that folder.
+
+- **Eden's config does not live in `~/Emulation/bios/eden/`.** That folder is a
+  dead end; Eden ignores it completely. Keys belong in `~/.local/share/eden/keys/`
+  (as `prod.keys` and `title.keys`), and firmware lands in `~/.local/share/eden/nand/`
+  after being imported through Eden's own settings UI. Files placed in the EmuDeck
+  bios folder are simply never read — this was confirmed both by the missing
+  `checkEdenBios` function above and by direct testing (keys in the EmuDeck folder
+  were not recognized; the same emulator launched directly and configured through
+  its own UI worked immediately).
+
+- **Steam ROM Manager may inherit broken Steam-Deck-paths after EmuDeck setup.**
+  EmuDeck pre-generates parser configs in `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
+  with hardcoded executor paths like `/run/media/mmcblk0p1/Emulation/tools/launchers/`
+  — a Steam Deck's SD-card mount point, not the correct `~/.config/EmuDeck/backend/tools/launchers/`.
+  This breaks all 23 emulator entries (not just Eden). If games fail to launch after
+  setup, edit that JSON file directly to replace the broken prefix.
+
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.
@@ -105,13 +121,8 @@ Steam target. The default shortcut stays the plain launcher anyway, because
 SmartTube started via `app launch` has the broken back button documented in the
 README.
 
-The one thing left unmeasured is Cemu. The 40 FPS suggestion for demanding Cemu titles comes from EmuDeck's docs,
-calibrated to Steam Deck's (RDNA2, 8 CU) iGPU, not from a measurement on this
-hardware. The Radeon 780M is the same RDNA3, 12-CU silicon as the Ryzen Z1
-Extreme's iGPU (ROG Ally), which comfortably outperforms Steam Deck in Cemu
-workloads — so the real ceiling here is probably above 40 FPS on demanding
-titles. But Cemu/BOTW performance is also cache- and CPU-bound, not just GPU,
-so treat this as "likely better" rather than a revised number until measured.
+Eden performance on this hardware (Radeon 780M / Ryzen 7 H255) has not been
+measured.
 
 ## Working style the user asked for
 

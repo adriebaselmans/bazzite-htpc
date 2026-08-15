@@ -102,7 +102,7 @@ ujust setup-htpc
 Sanity check that the image carries what it should: `ujust --list` should show
 `setup-htpc`.
 
-## Wii U emulation (Cemu, via EmuDeck)
+## Nintendo Switch emulation (Eden, via EmuDeck)
 
 ```bash
 ujust setup-emulation     # installs EmuDeck through Bazzite's own portal
@@ -111,43 +111,50 @@ ujust emulation-tune      # performance checklist for the 780M
 ujust emulation-steam     # getting games into Steam with artwork
 ```
 
-EmuDeck is installed via **`bazzite-portal`**, which ships with Bazzite itself —
-there is no custom installer here. EmuDeck then owns the emulation stack: it
-installs Cemu, creates `~/Emulation`, and bundles its own Steam ROM Manager.
+EmuDeck is installed via **Bazzite Portal** (package `bazzite-portal`, actual
+command `yafti_gtk.py`), which ships with Bazzite itself — there is no custom
+installer here. EmuDeck then owns the emulation stack: it
+installs emulators, creates `~/Emulation`, and bundles its own Steam ROM Manager.
 
-Because it owns that stack, this image deliberately does **not** also ship Cemu
-or Steam ROM Manager as flatpaks. Installing both leaves you with two Cemus and
-two SRMs holding separate configs, which is exactly how duplicate Steam
+Because it owns that stack, this image deliberately does **not** also ship
+emulators or Steam ROM Manager as flatpaks. Installing both leaves you with
+duplicates holding separate configs, which is exactly how duplicate Steam
 shortcuts happen.
+
+In EmuDeck's Custom Install, choose **Linux PC** (not Steam Deck) for the
+platform, then enable **Eden** as the Switch emulator. EmuDeck 2.5.0's Eden
+installer is broken (see Known caveats below); the manual fix is to download
+Eden's AppImage directly from https://git.eden-emu.dev/eden-emu/eden/releases
+(pick the `-amd64-clang-pgo` build), place it in `~/Applications/`, and `chmod
++x` it. EmuDeck's launcher scripts already search that folder, so Steam ROM
+Manager will pick it up automatically.
+
+Nintendo Switch emulation needs game dumps plus `prod.keys` and `title.keys`
+(decrypted from your own hardware), and system firmware (also dumped from your
+own console). Keys go in `~/.local/share/eden/keys/`, and firmware must be
+imported through Eden's own settings UI (look for a firmware/system-files
+install option in its menus). Do **not** place keys or firmware in
+`~/Emulation/bios/eden/` — that folder is a dead end; Eden does not read from
+it at all.
+
+For Steam ROM Manager, choose the integration level "High / Steam ROM Manager"
+(not EmulationStation), which generates a "Nintendo Switch - Eden" parser that
+scans `~/Emulation/roms/switch/` for game files (`.kip`, `.nca`, `.nro`, `.nso`,
+`.nsp`, `.xci` in any case) and adds each to Steam with its own tile.
 
 ### Where things live
 
 | What | Where |
 | --- | --- |
-| Your game dumps | `~/Emulation/roms/wiiu/roms` |
-| Saves / persistent storage | `~/Emulation/roms/wiiu/mlc01` |
-| Cemu config, controller profiles | `~/.config/Cemu/` |
-| Graphic packs, shader cache, `keys.txt` | `~/.local/share/Cemu/` |
+| Your game dumps | `~/Emulation/roms/switch/` |
+| Saves / persistent storage | `~/.local/share/eden/nand/` (created by Eden's firmware import) |
+| Eden config, settings | `~/.config/eden/` |
+| Keys and firmware | `~/.local/share/eden/keys/` and `~/.local/share/eden/nand/` |
 | EmuDeck itself | `~/Emulation/tools/` |
 | Steam shortcuts | Steam's `shortcuts.vdf`, written by Steam ROM Manager |
 
-No game content, keys or BIOS files ship here or are downloaded by any recipe —
-provide your own dumps. Prefer decrypted `.wua`/`.rpx`; Cemu is moving away from
-encrypted `.wud`/`.wux`.
-
-### Known trade-off: Cemu's AppImage channel
-
-EmuDeck installs Cemu as an **AppImage**. In May 2026 Cemu's AppImage and Ubuntu
-zip release assets on GitHub were replaced with a credential stealer, uploaded by
-an account with no prior contribution to the repo; the Windows build, the macOS
-build, the git tag and the Flathub Flatpak were all untouched
-([cemu-project/Cemu#1911](https://github.com/cemu-project/Cemu/issues/1911)).
-Those assets have since been restored.
-
-Flathub builds and signs from source, so that channel remains the safer one, but
-EmuDeck does not support a Flatpak Cemu yet
-([dragoonDorise/EmuDeck#1140](https://github.com/dragoonDorise/EmuDeck/issues/1140)).
-This setup accepts that trade-off in exchange for EmuDeck's integration.
+No game content, keys or firmware ship here or are downloaded by any recipe —
+provide your own dumps from your own hardware.
 
 ### Two things that bite
 
@@ -155,12 +162,8 @@ This setup accepts that trade-off in exchange for EmuDeck's integration.
 shortcuts file directly; with Steam running, your new entries are discarded when
 it exits.
 
-**Never enable Proton compatibility** on Cemu or on the games SRM adds — this is
+**Never enable Proton compatibility** on Eden or on the games SRM adds — this is
 a native Linux build and Proton breaks it.
-
-Performance settings are a printed checklist rather than a generated
-`settings.xml`: a malformed one stops Cemu from starting, and overwriting an
-existing one discards controller profiles already set up.
 
 ## Forking this repo
 
@@ -233,6 +236,19 @@ All of them are safe to re-run.
   its own, unlike the Shield.
 - **Kodi must have been started once** before `ujust htpc-xstreamflex` works; it
   needs `~/.var/app/tv.kodi.Kodi` to exist.
+- **EmuDeck 2.5.0's Eden installer is broken.** Selecting Eden in Custom Install
+  does not download it; the setup log reports `checkEdenBios: command not found`
+  (an upstream bug, EmuDeck issue #1568). Workaround: download Eden's AppImage
+  directly from https://git.eden-emu.dev/eden-emu/eden/releases (pick
+  `-amd64-clang-pgo`), place it in `~/Applications/`, and `chmod +x` it.
+- **Do not put Eden keys in `~/Emulation/bios/eden/`.** That folder is a dead
+  end — Eden ignores it completely and reads from `~/.local/share/eden/keys/`
+  instead. Placing files there will not be recognized.
+- **Steam ROM Manager paths may revert to Steam Deck defaults after EmuDeck
+  updates.** The parser configs in `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
+  have hardcoded paths like `/run/media/mmcblk0p1/Emulation/tools/launchers/`
+  (a Steam Deck's SD card mount) that should be `~/.config/EmuDeck/backend/tools/launchers/`.
+  If games stop launching after an update, check that file's executor paths.
 
 ## xstreamflex under Flatpak
 

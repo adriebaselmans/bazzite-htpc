@@ -1,20 +1,20 @@
-# Wii U emulation (Cemu) via EmuDeck, alongside the existing HTPC setup.
+# Nintendo Switch emulation (Eden) via EmuDeck, alongside the existing HTPC setup.
 #
 # EmuDeck is installed through bazzite-portal, which ships with Bazzite itself -
 # no custom installer here. EmuDeck then owns the whole emulation stack: it
-# installs Cemu, creates ~/Emulation, and bundles its own Steam ROM Manager.
+# installs Eden, creates ~/Emulation, and bundles its own Steam ROM Manager.
 #
-# Because it owns that stack, this image deliberately does NOT also ship Cemu or
-# Steam ROM Manager as flatpaks. Installing both gives you two Cemus and two
+# Because it owns that stack, this image deliberately does NOT also ship Eden or
+# Steam ROM Manager as flatpaks. Installing both gives you two Edens and two
 # SRMs with separate configs, which is how duplicate Steam shortcuts happen.
+# (Eden ships as AppImage only from git.eden-emu.dev, not as a Flatpak.)
 #
-# Note on trust: EmuDeck installs Cemu as an AppImage. In May 2026 Cemu's
-# AppImage and Ubuntu zip release assets were replaced with a credential stealer
-# via an account with no prior contribution to the repo; Windows, macOS and the
-# Flathub Flatpak were untouched. Those assets have since been restored. The
-# Flatpak channel remains the safer one, but EmuDeck does not support it yet
-# (dragoonDorise/EmuDeck#1140) - this is a deliberate, informed trade-off for
-# EmuDeck's integration.
+# Legal note: Switch emulation sits on much shakier legal ground than Wii U.
+# Nintendo sued and shut down Yuzu (2024, $2.4M settlement) and Ryujinx (Oct
+# 2024) directly after contacting devs; successor forks faced ongoing DMCA
+# takedowns into 2026 (e.g. Suyu ceased development Feb 2025). Eden and a
+# Ryujinx-continuation fork called "Ryubing" (git.ryujinx.app) are current
+# survivors as of August 2026, but this could change again.
 
 EMU_ROOT := "$HOME/Emulation"
 
@@ -29,72 +29,95 @@ setup-emulation:
         echo ""
     fi
 
-    if ! command -v bazzite-portal >/dev/null 2>&1; then
-        echo "bazzite-portal is not available on this image." >&2
-        echo "It ships with Bazzite itself, so this is unexpected - check that" >&2
-        echo "you are running the bazzite-deck base rather than something else." >&2
+    if ! command -v yafti_gtk.py >/dev/null 2>&1; then
+        echo "yafti_gtk.py is not available on this image." >&2
+        echo "It ships with Bazzite itself (package bazzite-portal), so this is" >&2
+        echo "unexpected - check that you are running the bazzite-deck base" >&2
+        echo "rather than something else." >&2
         exit 1
     fi
 
     echo "Opening Bazzite Portal. Pick EmuDeck, then in EmuDeck's own setup:"
     echo "  - choose Custom install if you want to pick emulators individually"
-    echo "  - enable Cemu"
+    echo "  - select 'Linux PC' (not 'Steam Deck' - this is a mini-PC)"
+    echo "  - select 'High' integration (Steam ROM Manager, not EmulationStation)"
+    echo "  - enable Eden (or Ryubing as a fallback)"
     echo "  - point storage at your preferred drive (default is fine)"
     echo ""
+    echo "Note: EmuDeck 2.5.0's Eden auto-install is broken (upstream bug #1568,"
+    echo "planned for 3.x). You will need to download and install Eden manually."
+    echo "After EmuDeck finishes: run 'ujust emulation-paths' for instructions."
+    echo ""
+    echo "If EmuDeck adds an EmulationStationDE Steam shortcut (it may, but won't"
+    echo "install ES-DE itself), delete it from Steam - not needed, use Steam tiles."
+    echo ""
     echo "Afterwards:"
-    echo "  ujust emulation-paths   where everything lives"
+    echo "  ujust emulation-paths   where everything lives + manual Eden install"
     echo "  ujust emulation-tune    performance settings for the 780M"
     echo "  ujust emulation-steam   getting games into Steam"
     echo ""
-    bazzite-portal
+    # The desktop entry (Name=Bazzite Portal) runs exactly this - the package is
+    # called bazzite-portal, but that is not the name of anything it installs.
+    yafti_gtk.py /usr/share/yafti/yafti.yml
 
-# Print where EmuDeck keeps ROMs, Cemu config, keys and saves.
+# Print where to install Eden and where EmuDeck keeps ROMs, config, keys and saves.
 emulation-paths:
-    @echo "EmuDeck installs Cemu natively (AppImage), so these are the native paths:"
+    @echo "Manual Eden install (required - EmuDeck 2.5.0 auto-install is broken):"
+    @echo "  1. Download the amd64-clang-pgo build from:"
+    @echo "     https://git.eden-emu.dev/eden-emu/eden/releases"
+    @echo "     (not -steamdeck or -rog-ally builds; clang-pgo is ~10-30% faster)"
+    @echo "  2. Place it in: ~/Applications/"
+    @echo "  3. Make it executable: chmod +x ~/Applications/Eden-Linux-*-amd64-clang-pgo.AppImage"
     @echo ""
-    @echo "  your game dumps          {{EMU_ROOT}}/roms/wiiu/roms"
-    @echo "  saves / persistent data  {{EMU_ROOT}}/roms/wiiu/mlc01"
-    @echo "  config + controllers     ~/.config/Cemu/"
-    @echo "  graphic packs + shaders  ~/.local/share/Cemu/"
-    @echo "  keys.txt (encrypted ROMs) ~/.local/share/Cemu/"
-    @echo "  EmuDeck itself           {{EMU_ROOT}}/tools/"
+    @echo "Once placed there, EmuDeck's own Steam ROM Manager parser will find it."
     @echo ""
-    @echo "Prefer decrypted dumps (.wua / .rpx) - Cemu is moving away from"
-    @echo "encrypted .wud/.wux. Provide your own; nothing ships here."
+    @echo "Eden paths (native Linux, not in ~/Emulation):"
+    @echo "  ROM files (switch)       {{EMU_ROOT}}/roms/switch/"
+    @echo "                            (extensions: .kip .nca .nro .nso .nsp .xci)"
+    @echo "  config                   ~/.config/eden/"
+    @echo "  keys.txt / title.keys     ~/.local/share/eden/keys/"
+    @echo "  firmware/nand            ~/.local/share/eden/nand/"
+    @echo "  save data                ~/.local/share/eden/nand/user/save"
+    @echo "  Eden executable          ~/Applications/"
+    @echo ""
+    @echo "WARNING: ~/Emulation/bios/eden/ exists (EmuDeck creates it) but Eden"
+    @echo "does NOT read from it. Keys and firmware must go in ~/.local/share/eden/"
+    @echo "as shown above, or Eden will not find them. Confirmed by testing."
+    @echo ""
+    @echo "Keys and firmware must be dumped from your own real Switch console."
+    @echo "Look for a firmware/system-files install option in Eden's own settings"
+    @echo "to import them - firmware cannot simply be copied into a folder."
 
-# Performance checklist for the Radeon 780M. Deliberately not automated.
+# Performance tuning for Eden on the Radeon 780M.
 emulation-tune:
-    @echo "Apply these in Cemu once (Options > General settings / Graphics):"
+    @echo "Eden is configured through its own settings menu once running."
+    @echo "Graphics options and per-game tuning are available there."
     @echo ""
-    @echo "  Graphics API            Vulkan"
-    @echo "  Graphics device         Radeon 780M"
-    @echo "  VSync                   On  (HTPC on a TV - tearing is worse than a"
-    @echo "                              frame of latency, and it caps the iGPU)"
-    @echo "  Async shader compile    On  (the big one: without it you get a"
-    @echo "                              stutter at every new shader)"
-    @echo "  Accurate barriers       On  (leave default; off risks glitches)"
-    @echo "  Full sync at GX2DrawDone  Off"
-    @echo ""
-    @echo "Per-game, via Graphic Packs:"
-    @echo "  - resolution 1920x1080; do not exceed the TV's native resolution"
-    @echo "  - demanding titles (e.g. Breath of the Wild) run steadier at a"
-    @echo "    40 FPS cap than chasing 60 and missing it"
-    @echo ""
-    @echo "Not written automatically on purpose: a malformed settings.xml stops"
-    @echo "Cemu from starting, and overwriting an existing one would discard"
-    @echo "controller profiles you had already set up."
+    @echo "No FPS benchmarks exist yet for Eden on the Radeon 780M; performance"
+    @echo "will depend on the specific game and your settings choices."
+    @echo "Test with your preferred titles and adjust resolution / graphics"
+    @echo "options as needed to balance visual quality and frame rate."
 
-# How to get Wii U games into Steam with artwork.
+# How to get Switch games into Steam with artwork.
 emulation-steam:
     @echo "Use the Steam ROM Manager that EmuDeck installed - not a separate one."
     @echo "Launch it from the EmuDeck app (Tools > Steam ROM Manager)."
     @echo ""
     @echo "  1. Close Steam completely first. SRM edits Steam's shortcuts file;"
     @echo "     with Steam running, your new entries are discarded on exit."
-    @echo "  2. Parser: 'Nintendo WiiU - Cemu (.wua) - Native' or the .rpx"
-    @echo "     variant, matching your dump format."
+    @echo "  2. Parser: 'Nintendo Switch - Eden' (pre-configured by EmuDeck,"
+    @echo "     scans ~/Emulation/roms/switch/ for .kip/.nca/.nro/.nso/.nsp/.xci)"
     @echo "  3. Test Parser, check the titles and artwork, then Parse + Save."
     @echo "  4. Back in Game Mode the games appear as normal Steam entries."
     @echo ""
-    @echo "Never enable Proton compatibility on Cemu or on the games SRM adds:"
+    @echo "Never enable Proton compatibility on Eden or on the games SRM adds:"
     @echo "this is a native Linux build and Proton breaks it."
+    @echo ""
+    @echo "If games fail to launch with 'file not found' after an SRM regenerate,"
+    @echo "check ~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/"
+    @echo "userConfigurations.json for /run/media/mmcblk0p1/ (a Steam Deck path"
+    @echo "that doesn't exist here). Replace it with the real path,"
+    @echo "~/.config/EmuDeck/backend/tools/launchers/, and retry."
+    @echo ""
+    @echo "Ryubing (a Ryujinx successor fork) also auto-installed if selected."
+    @echo "It is unused but works as a fallback if Eden ever breaks."
