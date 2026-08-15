@@ -244,11 +244,18 @@ All of them are safe to re-run.
 - **Do not put Eden keys in `~/Emulation/bios/eden/`.** That folder is a dead
   end — Eden ignores it completely and reads from `~/.local/share/eden/keys/`
   instead. Placing files there will not be recognized.
-- **Steam ROM Manager paths may revert to Steam Deck defaults after EmuDeck
-  updates.** The parser configs in `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
-  have hardcoded paths like `/run/media/mmcblk0p1/Emulation/tools/launchers/`
-  (a Steam Deck's SD card mount) that should be `~/.config/EmuDeck/backend/tools/launchers/`.
-  If games stop launching after an update, check that file's executor paths.
+- **Two `userConfigurations.json` files exist; only one is real.**
+  `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
+  is a template EmuDeck seeds once - editing it does nothing afterwards. Steam
+  ROM Manager actually reads/writes
+  `~/.config/steam-rom-manager/userData/userConfigurations.json`. Both shipped
+  with broken executor paths for every emulator entry (one had a Steam Deck
+  SD-card path, `/run/media/mmcblk0p1/...`; the other had
+  `~/Emulation/tools/launchers/<emu>.sh`, which doesn't exist - the real
+  scripts are at `~/.config/EmuDeck/backend/tools/launchers/`). If added games
+  don't show up in Steam, fix the path in the **real** file, and also run
+  `steam-rom-manager list` - EmuDeck can leave a parser you enabled sitting
+  `Disabled` regardless of what's in either JSON.
 
 ## xstreamflex under Flatpak
 

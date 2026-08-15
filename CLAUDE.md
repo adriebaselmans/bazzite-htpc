@@ -80,12 +80,20 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   were not recognized; the same emulator launched directly and configured through
   its own UI worked immediately).
 
-- **Steam ROM Manager may inherit broken Steam-Deck-paths after EmuDeck setup.**
-  EmuDeck pre-generates parser configs in `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
-  with hardcoded executor paths like `/run/media/mmcblk0p1/Emulation/tools/launchers/`
-  — a Steam Deck's SD-card mount point, not the correct `~/.config/EmuDeck/backend/tools/launchers/`.
-  This breaks all 23 emulator entries (not just Eden). If games fail to launch after
-  setup, edit that JSON file directly to replace the broken prefix.
+- **Steam ROM Manager reads its config from two different places, and only one
+  of them is real.** `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
+  is EmuDeck's template copy; the config Steam ROM Manager actually loads and
+  saves to (whether launched from its own icon or the EmuDeck app) is
+  `~/.config/steam-rom-manager/userData/userConfigurations.json` - a different
+  inode entirely. Editing the template does nothing at runtime. Both copies
+  shipped with broken executor paths for all 23 emulator entries (the template
+  had `/run/media/mmcblk0p1/...`, a Steam Deck SD-card mount; the real one had
+  `/home/adrie/Emulation/tools/launchers/<emu>.sh`, a path that doesn't exist -
+  the real launcher scripts live at `~/.config/EmuDeck/backend/tools/launchers/`).
+  Fix the **real** file if games silently do nothing when added to Steam.
+  Also check `steam-rom-manager list` (CLI) - EmuDeck's Custom Install can
+  leave a parser you explicitly enabled sitting `Disabled` in Steam ROM
+  Manager itself, a separate flag from anything in that JSON.
 
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
