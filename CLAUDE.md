@@ -80,20 +80,26 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   were not recognized; the same emulator launched directly and configured through
   its own UI worked immediately).
 
-- **Steam ROM Manager reads its config from two different places, and only one
-  of them is real.** `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
-  is EmuDeck's template copy; the config Steam ROM Manager actually loads and
-  saves to (whether launched from its own icon or the EmuDeck app) is
-  `~/.config/steam-rom-manager/userData/userConfigurations.json` - a different
-  inode entirely. Editing the template does nothing at runtime. Both copies
-  shipped with broken executor paths for all 23 emulator entries (the template
-  had `/run/media/mmcblk0p1/...`, a Steam Deck SD-card mount; the real one had
-  `/home/adrie/Emulation/tools/launchers/<emu>.sh`, a path that doesn't exist -
-  the real launcher scripts live at `~/.config/EmuDeck/backend/tools/launchers/`).
-  Fix the **real** file if games silently do nothing when added to Steam.
-  Also check `steam-rom-manager list` (CLI) - EmuDeck's Custom Install can
-  leave a parser you explicitly enabled sitting `Disabled` in Steam ROM
-  Manager itself, a separate flag from anything in that JSON.
+- **Steam ROM Manager has two config files, and the template can silently
+  overwrite the real one - fix both, always.**
+  `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
+  is EmuDeck's template; `~/.config/steam-rom-manager/userData/userConfigurations.json`
+  (different inode) is what Steam ROM Manager actually reads and writes.
+  Editing only the real one is not durable: `SRM_addExtraParsers()` in
+  `~/.config/EmuDeck/backend/functions/ToolScripts/emuDeckSRM.sh` runs an
+  `rsync` from the template onto the real file (with a timestamped `.bak`)
+  every time Steam ROM Manager is launched through EmuDeck's own menu/desktop
+  entry, silently reverting any manual fix or enable/disable change made
+  since. Both copies shipped with broken executor paths for all 23 emulator
+  entries (the template had `/run/media/mmcblk0p1/...`, a Steam Deck SD-card
+  mount; the real one had `/home/adrie/Emulation/tools/launchers/<emu>.sh`,
+  which doesn't exist - the real launcher scripts live at
+  `~/.config/EmuDeck/backend/tools/launchers/`), and both had Citron and
+  Ryujinx enabled with Eden disabled. Fix both files' paths and `disabled`
+  flags together, or the next EmuDeck-launched Steam ROM Manager session
+  undoes it. Launching the AppImage directly (`~/Emulation/tools/Steam-ROM-Manager.AppImage`,
+  or its CLI: `list` / `enable <id>` / `disable <id>` / `add` / `remove`)
+  skips this rsync entirely and is the more reliable way to check state.
 
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and

@@ -244,18 +244,28 @@ All of them are safe to re-run.
 - **Do not put Eden keys in `~/Emulation/bios/eden/`.** That folder is a dead
   end — Eden ignores it completely and reads from `~/.local/share/eden/keys/`
   instead. Placing files there will not be recognized.
-- **Two `userConfigurations.json` files exist; only one is real.**
-  `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
-  is a template EmuDeck seeds once - editing it does nothing afterwards. Steam
-  ROM Manager actually reads/writes
-  `~/.config/steam-rom-manager/userData/userConfigurations.json`. Both shipped
-  with broken executor paths for every emulator entry (one had a Steam Deck
-  SD-card path, `/run/media/mmcblk0p1/...`; the other had
-  `~/Emulation/tools/launchers/<emu>.sh`, which doesn't exist - the real
-  scripts are at `~/.config/EmuDeck/backend/tools/launchers/`). If added games
-  don't show up in Steam, fix the path in the **real** file, and also run
-  `steam-rom-manager list` - EmuDeck can leave a parser you enabled sitting
-  `Disabled` regardless of what's in either JSON.
+- **Two `userConfigurations.json` files exist, and the template can silently
+  overwrite the real one.** `~/.config/EmuDeck/backend/configs/steam-rom-manager/userData/userConfigurations.json`
+  is EmuDeck's template; `~/.config/steam-rom-manager/userData/userConfigurations.json`
+  is what Steam ROM Manager actually reads and writes. Fixing only the real
+  one doesn't stick: opening Steam ROM Manager through EmuDeck's own
+  menu/desktop entry runs an `rsync` (in `SRM_addExtraParsers()`,
+  `~/.config/EmuDeck/backend/functions/ToolScripts/emuDeckSRM.sh`) that
+  copies the template over the real file, undoing any manual fix or
+  enable/disable change since. Fix **both** files' executor paths and
+  `disabled` flags at once, or expect it to revert. Both shipped with broken
+  paths for every emulator (one had a Steam Deck SD-card path,
+  `/run/media/mmcblk0p1/...`; the other had `~/Emulation/tools/launchers/<emu>.sh`,
+  which doesn't exist - the real scripts are at
+  `~/.config/EmuDeck/backend/tools/launchers/`), and both had Citron and
+  Ryujinx enabled with Eden disabled. Launching
+  `~/Emulation/tools/Steam-ROM-Manager.AppImage` directly (or its CLI:
+  `list` / `enable <id>` / `disable <id>` / `add` / `remove`) skips the rsync
+  and is the reliable way to check or change state.
+- **Steam does not notice `shortcuts.vdf` changing underneath it.** It reads
+  the file once at startup and holds that in memory; edits made (by Steam ROM
+  Manager or by hand) while Steam is already running only take effect after a
+  full Steam restart, not just closing and reopening a window.
 
 ## xstreamflex under Flatpak
 
