@@ -8,6 +8,12 @@ TV image.
 
 Built to replace an ageing NVIDIA Shield on a mini-PC (AMD + Radeon 780M).
 
+> **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** is the reference for how the
+> whole thing fits together: the three repositories, the four storage layers,
+> where every file actually lives, the Flatpak and Steam mechanics that keep
+> mattering, and a diagnostics playbook. Read that when something behaves
+> strangely; read on here to install it.
+
 ## What is where, and why
 
 The setup is split across two layers, and the split is not cosmetic:
@@ -268,13 +274,32 @@ All of them are safe to re-run.
   Manager or by hand) while Steam is already running only take effect after a
   full Steam restart, not just closing and reopening a window.
 
-## xstreamflex under Flatpak
+## The add-ons
 
-Works unmodified. Every path derives from `xbmcvfs.translatePath()` on the
-add-on profile, so under Flatpak it resolves to
+Two add-ons of ours run inside Kodi's Flatpak, each from its own repository:
+
+| Add-on | Repo | Gives you |
+| --- | --- | --- |
+| **xstreamflex** | [adriebaselmans/xstreamflex](https://github.com/adriebaselmans/xstreamflex) | Live TV (via IPTV Simple), plus films and series in Kodi's own library |
+| **myTune** | [adriebaselmans/myTune](https://github.com/adriebaselmans/myTune) | Music from a self-hosted myTune server elsewhere on the LAN |
+
+**xstreamflex works unmodified under Flatpak.** Every path derives from
+`xbmcvfs.translatePath()` on the add-on profile, so it resolves to
 `~/.var/app/tv.kodi.Kodi/data/...` — the `.strm`/`.nfo` library, the M3U export
 and the IPTV Simple configuration all land inside the same sandbox Kodi reads
-from. Nothing needs to reach outside it.
+from. Nothing needs to reach outside it. The exception is putting the library
+on a NAS or external disk; that needs filesystem permissions granted via
+**Flatseal**, which is why Flatseal is in the image.
 
-The exception is putting the library on a NAS or external disk; that needs
-filesystem permissions granted via Flatseal, which is why it is in the image.
+Two things worth knowing before hunting for settings that do not exist:
+
+- **Live TV is filtered by country.** A full panel is ~11,800 channels, which
+  gives Kodi an EPG large enough to wedge the UI. xstreamflex filters the export
+  at the source; a second menu entry rebuilds across all countries when you need
+  something the filter excludes.
+- **Music cannot go into Kodi's library.** Kodi's music scanner reads tags
+  embedded in audio files and cannot index `.strm` at all, so myTune is reached
+  through **Music → Files** (add `plugin://plugin.audio.mytune/` as a music
+  source) or through **Favourites** on the home screen. The **Music** tile
+  itself always opens the empty music library. A Kodi limitation, not a missing
+  setting — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#what-music-can-and-cannot-be).
