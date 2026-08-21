@@ -226,6 +226,39 @@ reference for the working spelling.
 Worth checking early: those `CSettingString` errors appear at add-on load, well
 before whatever symptom you are chasing.
 
+### Controllers: Steam Input duplicates every press
+
+A controller used inside an app launched from a Steam tile reaches that app
+**twice**: once as the real device, and once as the virtual pad Steam Input
+creates (vendor `28de`, Valve). In Kodi that shows up as every d-pad press or
+stick flick moving two items instead of one.
+
+Confirmed by counting raw events on both nodes while pressing:
+
+```bash
+ls /dev/input/js*                       # two nodes = two devices
+grep -iE 'N: Name=.*(xbox|pad|controller)' /proc/bus/input/devices
+```
+
+Kodi's log lists both under `new joystick device registered`. Deleting the
+phantom's button map does **not** help — a built-in or family map still
+matches it, and an empty override map does not suppress it either.
+
+The fix is on Steam's side: select the tile, **Manage → Controller settings**,
+and disable Steam Input for that shortcut. The virtual pad then stops existing
+and Kodi sees one device. There is no field for this in `shortcuts.vdf` —
+Steam keeps per-game controller configuration in its own cloud-synced store,
+so this is a UI step, not something a script can set.
+
+Related, for the real controller: Kodi matches a button map on **name plus
+button count plus axis count**. The bundled
+`Xbox_Wireless_Controller_15b_9a.xml` declares 9 axes while a Bluetooth Xbox
+pad reports 8, so it never matches and the controller does nothing at all. A
+user copy in
+`addon_data/peripheral.joystick/resources/buttonmaps/xml/linux/` with the
+correct count fixes it; every axis index the bundled map uses (0-7) fits in 8
+axes, so nothing else needs changing.
+
 ### What music can and cannot be
 
 Kodi's **music** library indexes tags embedded in audio files, so it cannot
