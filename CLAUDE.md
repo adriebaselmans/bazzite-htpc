@@ -101,6 +101,26 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   or its CLI: `list` / `enable <id>` / `disable <id>` / `add` / `remove`)
   skips this rsync entirely and is the more reliable way to check state.
 
+- **Steam exports `LC_ALL=C` to everything it launches, and `LC_ALL` beats
+  `LANG`.** Every app started from a Steam shortcut on this box - Kodi,
+  Waydroid, Eden - inherits it. For anything Python-based that means an ASCII
+  filesystem encoding, so a media title with an accent cannot be written as a
+  filename at all. It surfaced as xstreamflex's library sync aborting with
+  `'ascii' codec can't encode characters in position 116-122`, which looks like
+  an add-on bug and is not one. Check with
+  `tr '\0' '\n' < /proc/$(pgrep -x kodi.bin)/environ | grep LC_ALL`.
+  `ujust htpc-kodi-locale` clears it for Kodi via a flatpak override; that
+  override lives in mutable state under `/var`, which is why it is a `ujust`
+  step and not something the image can carry.
+- **Kodi's main thread can wedge on live TV, and it looks like something else
+  broke.** Zapping through a few IPTV channels left `kodi.bin` spinning at ~80%
+  CPU with no I/O, unresponsive even to a bare `JSONRPC.Ping` over port 9090 -
+  so the next add-on opened just sat there, which is what gets noticed and
+  blamed. That JSON-RPC ping is the fastest way to tell "this add-on hangs"
+  from "Kodi hangs": if Ping does not answer, stop debugging the add-on. The
+  underlying load was an 11.8k-channel playlist; xstreamflex now filters the
+  export by country (~570 channels here), which is fixed at the source rather
+  than in Kodi's settings.
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.

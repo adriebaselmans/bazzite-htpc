@@ -17,7 +17,7 @@ XSTREAMFLEX_REPO := "https://github.com/adriebaselmans/xstreamflex"
 SMARTTUBE_API := "https://api.github.com/repos/yuliskov/SmartTube/releases?per_page=30"
 
 # Set up everything: Waydroid + SmartTube, Kodi + xstreamflex, Steam entry.
-setup-htpc: htpc-waydroid htpc-smarttube htpc-xstreamflex htpc-steam-shortcut
+setup-htpc: htpc-waydroid htpc-smarttube htpc-kodi-locale htpc-xstreamflex htpc-steam-shortcut
     @echo ""
     @echo "HTPC setup done. Remaining manual steps:"
     @echo "  - pair your remote/controller:  ujust htpc-remote"
@@ -93,6 +93,25 @@ htpc-smarttube:
     echo "==> SmartTube installed."
     echo "    Start it from the Android TV launcher, not 'waydroid app launch' -"
     echo "    the back button does not work when launched directly."
+
+# Stop Steam's LC_ALL=C from giving Kodi an ASCII filesystem encoding.
+htpc-kodi-locale:
+    #!/usr/bin/bash
+    set -euo pipefail
+
+    # Steam exports LC_ALL=C to everything it launches, and LC_ALL beats LANG.
+    # Kodi is a non-Steam shortcut here, so it inherits that and Python ends up
+    # with an ASCII filesystem encoding: any media title carrying an accent
+    # cannot be turned into a filename. It surfaced as xstreamflex's library
+    # sync dying with "'ascii' codec can't encode characters", but it applies to
+    # anything Kodi writes, not just that add-on.
+    #
+    # This lives here rather than in the image because flatpak keeps overrides
+    # in /var/lib/flatpak/overrides (or ~/.local/share/flatpak), which is
+    # mutable state an ostree image does not carry.
+    flatpak override --user --unset-env=LC_ALL tv.kodi.Kodi
+    echo "==> Kodi will no longer inherit Steam's LC_ALL=C."
+    echo "    Restart Kodi for it to take effect."
 
 # Build and install the xstreamflex add-on into the Kodi flatpak.
 htpc-xstreamflex ref="main":

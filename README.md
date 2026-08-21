@@ -190,6 +190,7 @@ tab.
 | `ujust setup-htpc` | Everything below except `htpc-remote` |
 | `ujust htpc-waydroid` | Init Waydroid with the Android TV image (`ujust htpc-waydroid 1` forces a clean re-init) |
 | `ujust htpc-smarttube` | Install the latest **stable** SmartTube (arm64) |
+| `ujust htpc-kodi-locale` | Stop Kodi inheriting Steam's `LC_ALL=C` (breaks accented filenames) |
 | `ujust htpc-xstreamflex` | Build and install the xstreamflex add-on into the Kodi flatpak |
 | `ujust htpc-steam-shortcut` | Add Kodi and Waydroid to Steam so Game Mode can see them |
 | `ujust htpc-remote` | Pair a Bluetooth remote/controller |
