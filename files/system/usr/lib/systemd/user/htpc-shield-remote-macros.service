@@ -1,0 +1,10 @@
+[Unit]
+Description=Launch Kodi from the Shield remote Netflix button
+
+[Service]
+ExecStart=/usr/libexec/htpc-shield-remote-macros
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

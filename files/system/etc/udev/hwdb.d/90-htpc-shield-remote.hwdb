@@ -15,3 +15,10 @@
 # MODALIAS) so it cannot affect any other keyboard.
 evdev:input:b0005v0955p7217e0002*
  KEYBOARD_KEY_c0041=enter
+
+# The ◁ "back" button already sends a semantically-correct KEY_BACK (raw HID
+# Consumer usage 0x0224), but gamescope's Steam UI does not bind KEY_BACK to
+# anything - confirmed empirically it does nothing, while Escape does act as
+# back/cancel there. Remap to Escape so it matches Xbox controller B.
+evdev:input:b0005v0955p7217e0002*
+ KEYBOARD_KEY_c0224=esc

@@ -150,6 +150,30 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   Kodi: its default `keyboard.xml` has no `<select>` binding at all, only
   `<return>`/`<enter>` (both already mapped to the Select action) — so the
   button did nothing in Kodi either before this fix.
+- **Anything the remote launches must go through Steam, not the app directly.**
+  The Netflix button first launched Kodi with `flatpak run` and that wedged the
+  box: in Game Mode gamescope is the shell and Steam owns the windows, so a
+  bare flatpak lands next to gamescope with nothing managing it. Same class of
+  failure as the reverted `post_gamescope_start` hook and the Waydroid/cage
+  black screen. The fix is `steam://rungameid/<id>`, which makes the button
+  behave exactly like selecting the tile. Resolve the id from `shortcuts.vdf`
+  at runtime - `ujust htpc-steam-shortcut` rewrites that file and issues a new
+  appid, so a hardcoded one silently stops working.
+- **"Is it running yet?" is not a usable launch guard.** A `pgrep kodi.bin`
+  check looks sufficient and is not: Steam (or flatpak) needs several seconds
+  before anything is observable, so every press inside that window passes the
+  check. Four impatient presses started four Kodis fighting over the display -
+  the remote died and even Alt+F3 could not reach a TTY. Debounce on a
+  monotonic clock instead, and keep the process check only as a second net.
+- **A user service, not a system one, for anything that launches an app.**
+  Starting a flatpak from a root service and dropping privileges to the user
+  fails inside the sandbox with `bwrap: Can't find source path
+  /run/user/1000/doc/by-app/tv.kodi.Kodi: Permission denied` - the document
+  portal rejects a caller with no real session behind it. Reading the remote's
+  evdev node as the user needs `91-htpc-shield-remote-uaccess.rules`; note that
+  `TAG+="uaccess"` alone does *not* work here, because logind only grants that
+  ACL for devices bound to a seat and this one lives under
+  `/devices/virtual/misc/uhid`. Setting `OWNER=` is what actually works.
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.

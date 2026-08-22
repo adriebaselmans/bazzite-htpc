@@ -1,0 +1,14 @@
+# Let the desktop user read the Shield remote's input device.
+#
+# The Netflix-button launcher (htpc-shield-remote-macros) must run as the user,
+# not root: starting a flatpak from a root service and dropping privileges
+# fails inside the sandbox with "bwrap: Can't find source path
+# /run/user/1000/doc/by-app/tv.kodi.Kodi: Permission denied" - the document
+# portal rejects a caller with no real session behind it.
+#
+# TAG+="uaccess" is the usual way to hand a device to the logged-in user, and
+# it does get applied here - but logind grants the ACL only for devices bound
+# to a seat, and this one lives under /devices/virtual/misc/uhid (it is a
+# Bluetooth HID device materialised by uhid), so no ACL ever appears. Setting
+# the owner outright is what actually works for a virtual device.
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="NVIDIA SHIELD Remote", OWNER="adrie"

@@ -253,6 +253,14 @@ All of them are safe to re-run.
   ships `90-htpc-shield-remote.hwdb` to remap it to `KEY_ENTER`; this also
   fixes it in Kodi, whose default keymap never bound the `select` key name in
   the first place.
+- **The remote's ◁ button sends `KEY_BACK`, which Steam Game Mode ignores.**
+  Remapped to Escape in the same hwdb file, which is what that UI actually
+  treats as back/cancel.
+- **The remote's Netflix button launches Kodi**, via
+  `htpc-shield-remote-macros.service` (a *user* service). It launches through
+  `steam://rungameid/...` rather than `flatpak run`, so Steam owns the window
+  exactly as if you had picked the Kodi tile — starting the flatpak directly
+  leaves an unmanaged window beside gamescope and wedges Game Mode.
 - **Kodi must have been started once** before `ujust htpc-xstreamflex` works; it
   needs `~/.var/app/tv.kodi.Kodi` to exist.
 - **EmuDeck 2.5.0's Eden installer is broken.** Selecting Eden in Custom Install
