@@ -121,6 +121,24 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   underlying load was an 11.8k-channel playlist; xstreamflex now filters the
   export by country (~570 channels here), which is fixed at the source rather
   than in Kodi's settings.
+- **A Bluetooth remote cannot wake this box from suspend by default, and the
+  wakeup flags lie about why.** The Nvidia Shield remote's standby button
+  suspends the machine, then nothing brings it back. The tell is
+  `cat /sys/bus/usb/devices/*/power/wakeup`: the Realtek Bluetooth adapter
+  (`0bda:b85b`, USB class `e0/01/01`) reads `disabled` while the PCI xHCI
+  controller above it reads `enabled` - so the path looks open when only the
+  leaf device is shut out. Fixed in the image by
+  `files/system/usr/lib/udev/rules.d/90-htpc-bluetooth-wakeup.rules`, which
+  matches on the USB class rather than on this specific chip. It only works
+  because this box suspends to `s2idle` (`/sys/power/mem_sleep`); under S3 the
+  adapter loses power and no flag helps.
+- **The README's old claim that Shield remote pairing is lost across reboots
+  did not hold here.** It pairs, bonds and trusts normally over BlueZ
+  (`48:B0:2D:38:B2:4E`, `usb:v0955p7217`) and binds as a *single* HID keyboard -
+  no second device doubling every press, unlike a gamepad under Steam Input.
+  The circulating "known issue" is about pairing to a Shield, not to a Linux
+  host. Persistence across a full reboot is still unverified; suspend/resume
+  survives it.
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.

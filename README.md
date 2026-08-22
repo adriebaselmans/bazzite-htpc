@@ -237,10 +237,15 @@ All of them are safe to re-run.
 - **Widevine L3** caps DRM-protected content at 1080p. YouTube's ordinary
   streams are not Widevine-protected so 4K should be fine — but verify it rather
   than assume.
-- **Shield remote pairing can be lost across reboots.** Known issue; the
-  circulating fix explicitly does not solve it. A Flirc USB (IR) or a
-  Pulse-Eight USB-CEC adapter is more reliable — this machine has no HDMI-CEC of
-  its own, unlike the Shield.
+- **A Bluetooth remote cannot wake this box unless udev says so.** The Nvidia
+  Shield remote's standby button suspends it happily, but nothing wakes it
+  again: the USB Bluetooth adapter ships with `power/wakeup` set to `disabled`,
+  so the keypress never reaches the sleeping host. Misleadingly, the PCI xHCI
+  controller above it *is* wakeup-enabled out of the box, which makes the path
+  look open when only the leaf device is shut out. The image now ships
+  `90-htpc-bluetooth-wakeup.rules` to fix this; it only works because the
+  machine suspends to `s2idle` (`cat /sys/power/mem_sleep`) — under S3 the
+  adapter would lose power regardless.
 - **Kodi must have been started once** before `ujust htpc-xstreamflex` works; it
   needs `~/.var/app/tv.kodi.Kodi` to exist.
 - **EmuDeck 2.5.0's Eden installer is broken.** Selecting Eden in Custom Install

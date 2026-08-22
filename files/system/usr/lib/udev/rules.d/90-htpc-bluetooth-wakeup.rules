@@ -1,0 +1,15 @@
+# Let a Bluetooth remote wake the box from suspend.
+#
+# The Shield remote's standby button suspends the machine happily, but nothing
+# wakes it again: the USB Bluetooth adapter ships with remote-wakeup disabled,
+# so a keypress never reaches the sleeping host. The PCI xHCI controller above
+# it is already wakeup-enabled out of the box, which makes this look like it
+# should work - only the leaf device is shut out.
+#
+# Matched on USB class e0/01/01 (Wireless Controller / RF / Bluetooth) rather
+# than on this machine's Realtek 0bda:b85b, so replacing the adapter does not
+# silently take the wake path with it.
+#
+# Only meaningful because this box suspends to s2idle (see /sys/power/mem_sleep);
+# under S3 the adapter would lose power and this flag would not help.
+ACTION=="add", SUBSYSTEM=="usb", ATTR{bDeviceClass}=="e0", ATTR{bDeviceSubClass}=="01", ATTR{bDeviceProtocol}=="01", ATTR{power/wakeup}="enabled"
