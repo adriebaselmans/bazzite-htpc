@@ -1,0 +1,17 @@
+# Remap the Shield remote's (2019) round centre button from KEY_SELECT to
+# KEY_ENTER.
+#
+# The button sends HID Consumer-Control usage 0x0041 ("AC Select"), which
+# hid-generic maps to Linux KEY_SELECT (evdev code 353) - confirmed via
+# `evtest`, raw scancode 0xc0041. That is a legitimate keycode, but gamescope's
+# Steam Game Mode UI keyboard navigation only treats Enter/Return as confirm,
+# so KEY_SELECT does nothing there even though the D-pad (plain arrow keys)
+# navigates fine. Kodi is unaffected either way: its default keymap has no
+# binding for the "select" key name, only for "enter"/"return" (both mapped to
+# the Select action) - so this remap is what makes the centre button do
+# anything in Kodi too, not a regression risk.
+#
+# Match is scoped to this exact device (bus/vendor/product/version from its
+# MODALIAS) so it cannot affect any other keyboard.
+evdev:input:b0005v0955p7217e0002*
+ KEYBOARD_KEY_c0041=enter

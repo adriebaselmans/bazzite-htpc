@@ -137,8 +137,19 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   (`48:B0:2D:38:B2:4E`, `usb:v0955p7217`) and binds as a *single* HID keyboard -
   no second device doubling every press, unlike a gamepad under Steam Input.
   The circulating "known issue" is about pairing to a Shield, not to a Linux
-  host. Persistence across a full reboot is still unverified; suspend/resume
-  survives it.
+  host. Verified across a full reboot (2026-08-22), not just suspend/resume.
+- **The Shield remote's centre button is `KEY_SELECT`, and Steam Game Mode's
+  UI navigation does not treat that as confirm.** D-pad works immediately
+  (plain arrow keys), but the centre button does nothing there even though
+  it's a real, correctly-generated keycode — confirmed via `evtest`: raw HID
+  scancode `0xc0041` (Consumer-Control "AC Select"), evdev `KEY_SELECT` (code
+  353). gamescope's keyboard-nav only confirms on Enter/Return. Fixed with a
+  `hwdb` remap (`90-htpc-shield-remote.hwdb`,
+  `evdev:input:b0005v0955p7217e0002*` → `KEYBOARD_KEY_c0041=enter`), scoped to
+  this exact device by its full MODALIAS. Verified this does not regress
+  Kodi: its default `keyboard.xml` has no `<select>` binding at all, only
+  `<return>`/`<enter>` (both already mapped to the Select action) — so the
+  button did nothing in Kodi either before this fix.
 - **Every line of a just recipe must stay indented.** An unindented heredoc ends
   the recipe body; just then parses the embedded script as just syntax and
   reports a syntax error pointing at the script, not at the real cause.

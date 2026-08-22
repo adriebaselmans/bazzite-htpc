@@ -246,6 +246,13 @@ All of them are safe to re-run.
   `90-htpc-bluetooth-wakeup.rules` to fix this; it only works because the
   machine suspends to `s2idle` (`cat /sys/power/mem_sleep`) — under S3 the
   adapter would lose power regardless.
+- **The Shield remote's centre button does nothing in Steam Game Mode without
+  a keymap fix.** It sends HID Consumer-Control usage `0x0041` ("AC Select"),
+  which the kernel maps to `KEY_SELECT` — a real keycode, but not one
+  gamescope's Steam UI treats as confirm (only Enter/Return is). The image
+  ships `90-htpc-shield-remote.hwdb` to remap it to `KEY_ENTER`; this also
+  fixes it in Kodi, whose default keymap never bound the `select` key name in
+  the first place.
 - **Kodi must have been started once** before `ujust htpc-xstreamflex` works; it
   needs `~/.var/app/tv.kodi.Kodi` to exist.
 - **EmuDeck 2.5.0's Eden installer is broken.** Selecting Eden in Custom Install
