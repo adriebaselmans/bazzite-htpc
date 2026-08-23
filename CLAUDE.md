@@ -121,6 +121,31 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   underlying load was an 11.8k-channel playlist; xstreamflex now filters the
   export by country (~570 channels here), which is fixed at the source rather
   than in Kodi's settings.
+- **Long work must never run inside a `plugin://` directory listing.** Kodi
+  resolves those under a timeout while showing a modal busy spinner, so a job
+  measured in minutes ends as `GetDirectory - Error getting plugin://...` and a
+  spinner no button dismisses. It reads as "Kodi hangs" and is not: `JSONRPC.Ping`
+  answers throughout, and `Input.Back` over the same socket clears it. xstreamflex's
+  library sync now hands the work to its service thread, which has no such timeout.
+- **Check the ping with a raw socket, never `curl`.** Port 9090 is bare JSON over
+  TCP. `curl http://localhost:9090/jsonrpc` returns nothing on a *healthy* Kodi,
+  which reads as "wedged" and costs an hour. See docs/ARCHITECTURE.md.
+- **Unused skins keep their helper services running, and they choke on this
+  library.** Kodi took 48s to exit; the add-on's own service stopped in 1.6s of
+  that. The rest was `script.aeon.tajo.helper` and `script.embuary.helper`, both
+  stuck in `sync_library_tags()` -> `VideoLibrary.GetTags` against ~10.4k tags,
+  ignoring the shutdown signal until Kodi's ~31s script timeout expired. They
+  belong to skins that were installed and never used - the active skin is
+  `skin.estuary`. Now disabled in `Addons33.db`. The tracebacks appear *at*
+  shutdown but are not caused by it: `SystemExit` is raised into whatever the
+  script was already doing, so the stack shows where it was stuck all along.
+- **The exported library is catalogue-sized, and that is a deliberate trade.**
+  123k files, 483 MB, a 69 MB `MyVideos*.db`, 63k art rows and 10.4k tags for a
+  rented catalogue that changes weekly - Kodi's library is built for a collection
+  you own. Browsing live through the add-on's own `plugin://` listings needs none
+  of it. Keeping the full export was chosen knowingly (2026-08-23) for the
+  populated Movies/TV Shows menus; anything that walks the whole library or all
+  tags will be slow, and that is the reason.
 - **A Bluetooth remote cannot wake this box from suspend by default, and the
   wakeup flags lie about why.** The Nvidia Shield remote's standby button
   suspends the machine, then nothing brings it back. The tell is

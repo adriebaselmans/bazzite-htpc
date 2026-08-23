@@ -179,8 +179,20 @@ s.sendall(json.dumps({'jsonrpc':'2.0','id':1,'method':'JSONRPC.Ping'}).encode())
 s.settimeout(10); print(s.recv(4096))"
 ```
 
+Use a **raw socket**, as above. Port 9090 speaks bare JSON over TCP, not HTTP:
+`curl http://localhost:9090/jsonrpc` never answers *even on a perfectly healthy
+Kodi*, and reading that as "Kodi is wedged" sends you off diagnosing a hang that
+does not exist. (Kodi's HTTP JSON-RPC is a separate thing on the webserver port,
+off by default.)
+
 No answer means stop debugging the add-on — Kodi itself is stuck, and whatever
-you opened last is a victim, not the cause. A wedged Kodi shows as ~80% CPU on
+you opened last is a victim, not the cause.
+
+**A frozen spinner is not a wedge.** A busy dialog that ignores every button
+looks exactly like a hang and usually is not one: a plugin action that fails or
+times out leaves the dialog behind while Kodi runs on happily. Ping first; if it
+answers, the UI is fine and you can close the dialog from the same socket with
+`Input.Back`, no restart needed. A wedged Kodi shows as ~80% CPU on
 the main thread with almost no I/O:
 
 ```bash
