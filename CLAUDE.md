@@ -130,6 +130,14 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
 - **Check the ping with a raw socket, never `curl`.** Port 9090 is bare JSON over
   TCP. `curl http://localhost:9090/jsonrpc` returns nothing on a *healthy* Kodi,
   which reads as "wedged" and costs an hour. See docs/ARCHITECTURE.md.
+- **A library scan never re-reads an NFO Kodi has already seen.** `VideoLibrary.Scan`
+  answers `"result":"OK"` and finishes in seconds having changed nothing: a scan
+  only *adds* files that are new to it. Rewriting every `.nfo` in the library
+  therefore appears to do absolutely nothing. `VideoLibrary.RefreshMovie`
+  (`ignorenfo: false`) is the call that re-reads one - it removes and re-adds
+  the entry, so ids change as you go and every id has to be collected up front.
+  ~0.15s each, so a 5.5k catalogue is ~14 minutes; it needs no restart and no
+  DB surgery. Verify by reading the DB, never by trusting the "OK".
 - **Unused skins keep their helper services running, and they choke on this
   library.** Kodi took 48s to exit; the add-on's own service stopped in 1.6s of
   that. The rest was `script.aeon.tajo.helper` and `script.embuary.helper`, both

@@ -303,6 +303,22 @@ Two add-ons of ours run inside Kodi's Flatpak, each from its own repository:
 | **xstreamflex** | [adriebaselmans/xstreamflex](https://github.com/adriebaselmans/xstreamflex) | Live TV (via IPTV Simple), plus films and series in Kodi's own library |
 | **myTune** | [adriebaselmans/myTune](https://github.com/adriebaselmans/myTune) | Music from a self-hosted myTune server elsewhere on the LAN |
 
+The exported library is **catalogue-sized on purpose**: ~5.5k films and ~2.4k
+shows with ~55k episodes, or roughly 123k `.strm`/`.nfo` files and a 69 MB
+`MyVideos*.db`. Kodi's library is built for a collection you own, so anything
+that walks all of it (or all ~10k tags) is slow — see `CLAUDE.md`. Browsing the
+same catalogue live through the add-on's own `plugin://` listings needs none of
+those files; the full export is kept because it fills the Movies and TV Shows
+menus, and that trade was chosen knowingly.
+
+Metadata comes from the provider's per-item detail calls, not from an online
+scraper: both sources are scanned with **Local information only**. Movie NFOs
+carry plot, `<premiered>` (which is what lets Kodi offer "Release date" as a
+sort order at all), genre, director, cast, runtime, fanart and a TMDB
+`<uniqueid>`; titles are stripped of provider decorations like `4K` and `(NL)`
+in `<title>` only — never in filenames, which keep the id that makes them
+unique.
+
 **xstreamflex works unmodified under Flatpak.** Every path derives from
 `xbmcvfs.translatePath()` on the add-on profile, so it resolves to
 `~/.var/app/tv.kodi.Kodi/data/...` — the `.strm`/`.nfo` library, the M3U export

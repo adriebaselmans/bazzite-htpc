@@ -188,6 +188,19 @@ off by default.)
 No answer means stop debugging the add-on — Kodi itself is stuck, and whatever
 you opened last is a victim, not the cause.
 
+**"OK" from a library call is not evidence of anything.** `VideoLibrary.Scan`
+returns success and finishes fast whether or not it did any work, because a scan
+only picks up files Kodi has not indexed before. Changed `.nfo` contents need
+`VideoLibrary.RefreshMovie` per item. Check what the database actually holds
+afterwards rather than trusting the return value:
+
+```bash
+python3 -c "
+import sqlite3
+db = sqlite3.connect('file:$HOME/.var/app/tv.kodi.Kodi/data/userdata/Database/MyVideos131.db?mode=ro', uri=True)
+print(db.execute(\"SELECT COUNT(*) FROM movie_view WHERE premiered != ''\").fetchone())"
+```
+
 **A frozen spinner is not a wedge.** A busy dialog that ignores every button
 looks exactly like a hang and usually is not one: a plugin action that fails or
 times out leaves the dialog behind while Kodi runs on happily. Ping first; if it
