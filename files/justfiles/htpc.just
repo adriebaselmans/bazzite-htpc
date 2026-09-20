@@ -217,6 +217,7 @@ htpc-steam-smarttube: htpc-remote-service
     if [[ "$status" -eq 1 ]]; then
         exit 1
     fi
+
     if command -v steamtinkerlaunch >/dev/null 2>&1; then
         echo "==> Adding a direct SmartTube tile..."
         steamtinkerlaunch addnonsteamgame \
@@ -227,6 +228,13 @@ htpc-steam-smarttube: htpc-remote-service
         echo "Add /usr/libexec/htpc-smarttube-launcher as a Non-Steam Game once." >&2
         exit 1
     fi
+
+# Add/update the direct Android TV Spotify tile and install its Game Mode art.
+htpc-steam-spotify: htpc-remote-service
+    #!/usr/bin/bash
+    set -euo pipefail
+    /usr/libexec/htpc-steam-spotify-shortcut
+    echo "==> Spotify tile ready."
 
 # Pair a Bluetooth remote or controller and point at the Kodi keymap.
 htpc-remote:

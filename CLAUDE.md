@@ -242,6 +242,15 @@ Android Back. The user remote macro service emits an additional Linux
 from a playing SmartTube video back to Home on 2026-09-20. Keep the original
 Escape event because Steam Game Mode needs it and ignores KEY_BACK.
 
+Direct Android tiles (currently SmartTube and Spotify TV) go through
+`/usr/libexec/htpc-waydroid-app-launcher`. Do not point Steam straight at
+`waydroid app launch`: the shared wrapper owns the full-ui/cage lifecycle,
+preserves controller input, and watches `surfaceflinger`. Android's own
+Shutdown stops the container but does not close cage; without that watchdog,
+gamescope remains trapped on a black kiosk window. The wrapper closes cage
+automatically when surfaceflinger disappears. Steam → Exit Game is still the
+normal exit path.
+
 Eden performance on this hardware (Radeon 780M / Ryzen 7 H255) has not been
 measured.
 

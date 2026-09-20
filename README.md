@@ -201,9 +201,15 @@ tab.
 | `ujust htpc-xstreamflex` | Build and install the xstreamflex add-on into the Kodi flatpak |
 | `ujust htpc-steam-shortcut` | Add Kodi and Waydroid to Steam so Game Mode can see them |
 | `ujust htpc-steam-smarttube` | Make the old FreeTube/YouTube tile launch SmartTube directly (close Steam first) |
+| `ujust htpc-steam-spotify` | Add direct Android TV Spotify with Game Mode artwork (close Steam first) |
 | `ujust htpc-remote` | Pair a Bluetooth remote/controller |
 
 The setup recipes are safe to re-run.
+
+Spotify itself is installed once from Android TV's Play Store. After that,
+`ujust htpc-steam-spotify` creates or updates the remote-friendly Steam tile;
+it launches package `com.spotify.tv.android` directly without showing Android
+TV Home first.
 
 ## Known caveats
 
@@ -237,6 +243,9 @@ The setup recipes are safe to re-run.
   macro service additionally emits Linux `KEY_BACK`, which Android recognizes
   as its real Back action. This was verified from a playing SmartTube video
   back to its Home screen on 2026-09-20. Escape still reaches Steam and Kodi.
+- **Android's Shutdown no longer strands direct app tiles on black.** The
+  shared launcher watches Android's `surfaceflinger` process and closes `cage`
+  when Android stops. Steam's *Exit Game* remains the preferred exit route.
 - **Widevine L3** caps DRM-protected content at 1080p. YouTube's ordinary
   streams are not Widevine-protected so 4K should be fine — but verify it rather
   than assume.

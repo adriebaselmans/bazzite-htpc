@@ -1,0 +1,61 @@
+#!/usr/bin/bash
+# Run one Android TV app inside Bazzite's cage wrapper. If Android is shut down
+# from its own UI, close cage too instead of leaving gamescope on a black screen.
+set -euo pipefail
+
+if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 ANDROID_PACKAGE" >&2
+    exit 2
+fi
+
+package="$1"
+launcher_pid=""
+
+cleanup() {
+    trap - EXIT INT TERM HUP
+    if pgrep -x cage >/dev/null 2>&1; then
+        pkill -TERM -x cage || true
+        for _ in {1..5}; do
+            pgrep -x cage >/dev/null 2>&1 || break
+            sleep 0.2
+        done
+        # cage can ignore TERM after its Android client has disappeared.
+        pgrep -x cage >/dev/null 2>&1 && pkill -KILL -x cage || true
+    fi
+    if [[ -n "$launcher_pid" ]]; then
+        wait "$launcher_pid" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT INT TERM HUP
+
+/usr/bin/waydroid-launcher show-full-ui &
+launcher_pid=$!
+
+ready=0
+for _ in {1..90}; do
+    if ! kill -0 "$launcher_pid" 2>/dev/null; then
+        echo "Waydroid launcher exited before Android was ready." >&2
+        exit 1
+    fi
+    if pgrep -x surfaceflinger >/dev/null 2>&1; then
+        ready=1
+        break
+    fi
+    sleep 1
+done
+
+if [[ "$ready" -ne 1 ]]; then
+    echo "Android did not become ready within 90 seconds." >&2
+    exit 1
+fi
+
+sleep 2
+waydroid app launch "$package"
+
+# Bazzite's launcher only watches cage. Android's Shutdown stops surfaceflinger
+# but leaves cage alive, producing a permanent black screen. Close cage when
+# either Android or the owning launcher disappears.
+while kill -0 "$launcher_pid" 2>/dev/null; do
+    pgrep -x surfaceflinger >/dev/null 2>&1 || break
+    sleep 1
+done
