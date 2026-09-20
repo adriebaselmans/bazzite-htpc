@@ -2,6 +2,7 @@
 """Point the obsolete FreeTube/YouTube Steam shortcut at SmartTube."""
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import sys
 
@@ -31,11 +32,20 @@ def main():
         shortcut["LaunchOptions"] = ""
         shortcut["ShortcutPath"] = ""
         shortcut["FlatpakAppID"] = ""
+        shortcut["icon"] = "/usr/share/htpc-artwork/smarttube_squared.png"
+        appid = int(shortcut["appid"]) & 0xFFFFFFFF
+        grid = path.parent / "grid"
+        grid.mkdir(exist_ok=True)
+        artwork = Path("/usr/share/htpc-artwork")
+        shutil.copyfile(artwork / "smarttube.png", grid / f"{appid}.png")
+        shutil.copyfile(artwork / "smarttube_p.png", grid / f"{appid}p.png")
+        shutil.copyfile(artwork / "smarttube_icon.png",
+                        grid / f"{appid}_icon.png")
         tmp = path.with_suffix(".vdf.tmp")
         with tmp.open("wb") as handle:
             vdf.binary_dump(data, handle)
         os.replace(tmp, path)
-        print("Existing video tile now launches SmartTube through Waydroid.")
+        print("SmartTube launcher and Game Mode artwork installed.")
         return 0
     return 2
 

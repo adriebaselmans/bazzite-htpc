@@ -200,7 +200,7 @@ tab.
 | `ujust htpc-kodi-locale` | Stop Kodi inheriting Steam's `LC_ALL=C` (breaks accented filenames) |
 | `ujust htpc-xstreamflex` | Build and install the xstreamflex add-on into the Kodi flatpak |
 | `ujust htpc-steam-shortcut` | Add Kodi and Waydroid to Steam so Game Mode can see them |
-| `ujust htpc-steam-smarttube` | Make the old FreeTube/YouTube tile launch SmartTube directly (close Steam first) |
+| `ujust htpc-steam-smarttube` | Make the old FreeTube/YouTube tile launch SmartTube directly and install its artwork (close Steam first) |
 | `ujust htpc-steam-spotify` | Add direct Android TV Spotify with Game Mode artwork (close Steam first) |
 | `ujust htpc-remote` | Pair a Bluetooth remote/controller |
 
