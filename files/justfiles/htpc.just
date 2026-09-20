@@ -228,8 +228,20 @@ htpc-steam-shortcut:
 htpc-steam-freetube:
     #!/usr/bin/bash
     set -euo pipefail
+    if [[ -x /usr/libexec/htpc-steam-freetube ]]; then
+        if /usr/libexec/htpc-steam-freetube; then
+            /usr/libexec/htpc-steam-artwork
+            exit 0
+        else
+            status=$?
+            if [[ "$status" -eq 1 ]]; then
+                exit "$status"
+            fi
+        fi
+    fi
     if ! command -v steamtinkerlaunch >/dev/null 2>&1; then
-        echo "Install/use SteamTinkerLaunch, or add FreeTube manually:" >&2
+        echo "No existing Youtube shortcut and SteamTinkerLaunch is unavailable." >&2
+        echo "Add FreeTube manually as a non-Steam game:" >&2
         echo "  executable: /usr/bin/flatpak" >&2
         echo "  options:    run io.freetubeapp.FreeTube" >&2
         exit 1
