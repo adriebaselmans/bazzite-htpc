@@ -10,9 +10,11 @@ fi
 
 package="$1"
 launcher_pid=""
+app_list=""
 
 cleanup() {
     trap - EXIT INT TERM HUP
+    [[ -z "$app_list" ]] || rm -f "$app_list"
     if pgrep -x cage >/dev/null 2>&1; then
         pkill -TERM -x cage || true
         for _ in {1..5}; do
@@ -31,13 +33,20 @@ trap cleanup EXIT INT TERM HUP
 /usr/bin/waydroid-launcher show-full-ui &
 launcher_pid=$!
 
+# surfaceflinger appears several seconds before Waydroid's host API and Android
+# package manager are usable. Launching at that point hangs in
+# "Failed to get service waydroidplatform" and leaves Android TV Home visible.
+# Require a successful app listing that includes the requested package.
 ready=0
-for _ in {1..90}; do
+app_list="$(mktemp)"
+deadline=$((SECONDS + 90))
+while ((SECONDS < deadline)); do
     if ! kill -0 "$launcher_pid" 2>/dev/null; then
         echo "Waydroid launcher exited before Android was ready." >&2
         exit 1
     fi
-    if pgrep -x surfaceflinger >/dev/null 2>&1; then
+    if timeout 3 waydroid app list >"$app_list" 2>/dev/null \
+            && grep -Fq "packageName: $package" "$app_list"; then
         ready=1
         break
     fi
@@ -45,12 +54,13 @@ for _ in {1..90}; do
 done
 
 if [[ "$ready" -ne 1 ]]; then
-    echo "Android did not become ready within 90 seconds." >&2
+    echo "Android or package $package did not become ready within 90 seconds." >&2
     exit 1
 fi
 
-sleep 2
-waydroid app launch "$package"
+rm -f "$app_list"
+app_list=""
+timeout 15 waydroid app launch "$package"
 
 # Bazzite's launcher only watches cage. Android's Shutdown stops surfaceflinger
 # but leaves cage alive, producing a permanent black screen. Close cage when
