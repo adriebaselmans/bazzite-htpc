@@ -17,7 +17,7 @@ XSTREAMFLEX_REPO := "https://github.com/adriebaselmans/xstreamflex"
 SMARTTUBE_API := "https://api.github.com/repos/yuliskov/SmartTube/releases?per_page=30"
 
 # Set up everything: Waydroid + SmartTube, Kodi + xstreamflex, and Steam entries.
-setup-htpc: htpc-waydroid htpc-smarttube htpc-kodi-locale htpc-xstreamflex htpc-steam-shortcut
+setup-htpc: htpc-waydroid htpc-smarttube htpc-kodi-locale htpc-xstreamflex htpc-steam-shortcut htpc-remote-service
     @echo ""
     @echo "HTPC setup done. Remaining manual steps:"
     @echo "  - pair your remote/controller:  ujust htpc-remote"
@@ -91,8 +91,19 @@ htpc-smarttube:
     fi
     waydroid app install "$tmp/smarttube.apk"
     echo "==> SmartTube installed."
-    echo "    Start it from the Android TV launcher, not 'waydroid app launch' -"
-    echo "    the back button does not work when launched directly."
+    echo "    Run 'ujust htpc-steam-smarttube' with Steam closed for a direct tile."
+
+# Enable the user service that adds Android KEY_BACK while preserving Escape.
+htpc-remote-service:
+    #!/usr/bin/bash
+    set -euo pipefail
+
+    install -Dm644 /usr/lib/systemd/user/htpc-shield-remote-macros.service \
+        "$HOME/.config/systemd/user/htpc-shield-remote-macros.service"
+    systemctl --user daemon-reload
+    systemctl --user enable --now htpc-shield-remote-macros.service
+    systemctl --user restart htpc-shield-remote-macros.service
+    echo "==> Shield remote macros active (Escape + Android Back in Waydroid)."
 
 # Stop Steam's LC_ALL=C from giving Kodi an ASCII filesystem encoding.
 htpc-kodi-locale:
@@ -169,10 +180,8 @@ htpc-steam-shortcut:
         # /usr/bin/waydroid-launcher is Bazzite's own wrapper: it runs Waydroid
         # inside cage, which nests under gamescope, and its pkexec calls are
         # already allowed for the wheel group so nothing prompts in Game Mode.
-        # With no arguments it runs show-full-ui, so this lands on the Android
-        # TV home screen; open SmartTube from there. It does accept arguments
-        # (app launch org.smarttube.stable) for a one-tap tile, but SmartTube
-        # started that way has a broken back button - hence the plain launcher.
+        # Keep the full Android TV launcher as a fallback. The separate
+        # htpc-steam-smarttube recipe creates the direct SmartTube tile.
         echo "==> Adding Waydroid via steamtinkerlaunch..."
         steamtinkerlaunch addnonsteamgame \
             --appname="Waydroid" \
@@ -192,6 +201,31 @@ htpc-steam-shortcut:
         echo "               All Files, and pick /usr/bin/waydroid-launcher."
         echo ""
         echo "    Neither appears in Game Mode until you do this."
+    fi
+
+# Reuse the old FreeTube/YouTube tile for direct SmartTube. Its appid stays
+# unchanged, so existing Steam artwork remains attached. Run with Steam closed.
+htpc-steam-smarttube: htpc-remote-service
+    #!/usr/bin/bash
+    set -uo pipefail
+
+    if /usr/libexec/htpc-steam-smarttube-shortcut; then
+        echo "==> SmartTube tile ready."
+        exit 0
+    fi
+    status=$?
+    if [[ "$status" -eq 1 ]]; then
+        exit 1
+    fi
+    if command -v steamtinkerlaunch >/dev/null 2>&1; then
+        echo "==> Adding a direct SmartTube tile..."
+        steamtinkerlaunch addnonsteamgame \
+            --appname="SmartTube" \
+            --exepath="/usr/libexec/htpc-smarttube-launcher"
+    else
+        echo "No existing FreeTube/YouTube tile and steamtinkerlaunch is unavailable." >&2
+        echo "Add /usr/libexec/htpc-smarttube-launcher as a Non-Steam Game once." >&2
+        exit 1
     fi
 
 # Pair a Bluetooth remote or controller and point at the Kodi keymap.

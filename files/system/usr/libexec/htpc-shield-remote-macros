@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Launch Kodi from the Shield remote's Netflix button.
+"""HTPC-specific actions for the NVIDIA Shield 2019 remote.
 
 Launches through Steam (steam://rungameid/...), not `flatpak run`. In Game
 Mode gamescope is the shell and Steam owns the windows; starting the flatpak
@@ -18,6 +18,13 @@ path /run/user/1000/doc/by-app/tv.kodi.Kodi: Permission denied" - the document
 portal rejects a caller with no real session behind it. Reading the remote's
 evdev node as the user works because 91-htpc-shield-remote-uaccess.rules sets
 its owner.
+
+The remote's back scancode is mapped to Escape at the host level because Steam
+Game Mode ignores Linux KEY_BACK. Android needs the opposite: SmartTube treats
+Escape as a keyboard key, while Linux KEY_BACK becomes Android's real Back
+action. While Waydroid is running this service therefore emits an additional
+KEY_BACK event through uinput. The original Escape still reaches Steam/Kodi,
+so their behavior is unchanged.
 """
 import glob
 import re
@@ -87,27 +94,52 @@ def launch_kodi():
     )
 
 
+def waydroid_running():
+    result = subprocess.run(["/usr/bin/pgrep", "-x", "surfaceflinger"],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return result.returncode == 0
+
+
+def emit_android_back(output, value):
+    output.write(ecodes.EV_KEY, ecodes.KEY_BACK, value)
+    output.syn()
+
+
 def main():
     last_press = 0.0
-    while True:
-        device = find_device()
-        if device is None:
-            time.sleep(2)
-            continue
-        try:
-            for event in device.read_loop():
-                if not (event.type == ecodes.EV_KEY
-                        and event.code == ecodes.KEY_VIDEO
-                        and event.value == 1):
-                    continue
-                now = time.monotonic()
-                if now - last_press < DEBOUNCE_SECONDS:
-                    continue
-                last_press = now
-                launch_kodi()
-        except OSError:
-            # Bluetooth remote went away (suspend, out of range, powered off).
-            continue
+    forwarding_back = False
+    capabilities = {ecodes.EV_KEY: [ecodes.KEY_BACK]}
+    with evdev.UInput(capabilities, name="HTPC Waydroid Back") as output:
+        while True:
+            device = find_device()
+            if device is None:
+                time.sleep(2)
+                continue
+            try:
+                for event in device.read_loop():
+                    if event.type != ecodes.EV_KEY:
+                        continue
+                    if event.code == ecodes.KEY_ESC:
+                        if event.value == 1:
+                            forwarding_back = waydroid_running()
+                        if forwarding_back:
+                            emit_android_back(output, event.value)
+                        if event.value == 0:
+                            forwarding_back = False
+                        continue
+                    if not (event.code == ecodes.KEY_VIDEO and event.value == 1):
+                        continue
+                    now = time.monotonic()
+                    if now - last_press < DEBOUNCE_SECONDS:
+                        continue
+                    last_press = now
+                    launch_kodi()
+            except OSError:
+                # Bluetooth remote went away (suspend, out of range, powered off).
+                if forwarding_back:
+                    emit_android_back(output, 0)
+                    forwarding_back = False
+                continue
 
 
 if __name__ == "__main__":

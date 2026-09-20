@@ -234,19 +234,13 @@ Two mechanics worth keeping, since forum posts get both wrong:
 `/usr/bin/waydroid-launcher` runs Waydroid inside `cage`, a kiosk compositor
 that nests happily under gamescope, and its four `pkexec` calls are covered by
 `/usr/share/polkit-1/rules.d/30-waydroid.rules` (wheel → YES), so nothing
-prompts for a password. The launcher also **does** take arguments — with none
-it runs `show-full-ui`, otherwise it `exec waydroid "$@"` — so
-`waydroid-launcher app launch org.smarttube.stable` is a legitimate one-tap
-Steam target. The default shortcut stays the plain launcher anyway, because
-SmartTube started via `app launch` has the broken back button documented in the
-README.
-
-The apparent workaround — start `waydroid-launcher show-full-ui` first, then
-run `waydroid app launch org.smarttube.stable` — was tested on 2026-09-20. It
-does open SmartTube without showing the launcher, but host Escape and Alt+Left
-do not leave the SmartTube player. Do not ship a direct tile unless a later
-Waydroid/SmartTube version passes the same back-navigation test with the NVIDIA
-Shield 2019 remote.
+prompts for a password. The direct tile uses
+`/usr/libexec/htpc-smarttube-launcher`: it starts `show-full-ui` as the owning
+process and then brings SmartTube forward. Host Escape and Alt+Left are not
+Android Back. The user remote macro service emits an additional Linux
+`KEY_BACK` while Waydroid's surfaceflinger runs. This exact path was verified
+from a playing SmartTube video back to Home on 2026-09-20. Keep the original
+Escape event because Steam Game Mode needs it and ignores KEY_BACK.
 
 Eden performance on this hardware (Radeon 780M / Ryzen 7 H255) has not been
 measured.

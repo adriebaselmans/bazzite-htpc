@@ -196,9 +196,11 @@ tab.
 | `ujust setup-htpc` | Everything below except `htpc-remote` |
 | `ujust htpc-waydroid` | Init Waydroid with the Android TV image (`ujust htpc-waydroid 1` forces a clean re-init) |
 | `ujust htpc-smarttube` | Install the latest **stable** SmartTube (arm64) |
+| `ujust htpc-remote-service` | Enable Shield remote macros, including Android Back |
 | `ujust htpc-kodi-locale` | Stop Kodi inheriting Steam's `LC_ALL=C` (breaks accented filenames) |
 | `ujust htpc-xstreamflex` | Build and install the xstreamflex add-on into the Kodi flatpak |
 | `ujust htpc-steam-shortcut` | Add Kodi and Waydroid to Steam so Game Mode can see them |
+| `ujust htpc-steam-smarttube` | Make the old FreeTube/YouTube tile launch SmartTube directly (close Steam first) |
 | `ujust htpc-remote` | Pair a Bluetooth remote/controller |
 
 The setup recipes are safe to re-run.
@@ -211,16 +213,14 @@ The setup recipes are safe to re-run.
   `Failed to get service waydroidplatform` forever. Switching the image also
   means wiping `~/.local/share/waydroid/data` (as root), or the new Android
   hangs on the old userdata — `IP address: UNKNOWN` is the symptom.
-- **Waydroid under Game Mode is verified working** (2026-08-13), end to end:
-  the Steam tile brings up the Android TV home screen and SmartTube plays from
-  there. `ujust htpc-steam-shortcut` adds Bazzite's
-  `/usr/bin/waydroid-launcher` as the Steam target; it runs Waydroid inside
-  `cage`, which nests under `gamescope`, and its `pkexec` calls are already
+- **Waydroid under Game Mode is verified working**, end to end. The regular
+  tile opens Android TV; `ujust htpc-steam-smarttube` creates a direct
+  SmartTube tile. The direct wrapper starts Bazzite's
+  `/usr/bin/waydroid-launcher` underneath; it runs Waydroid inside `cage`,
+  which nests under `gamescope`, and its `pkexec` calls are already
   allowed for the `wheel` group so nothing prompts for a password. Give the
   first launch after a boot a minute or two — that is Android booting, not a
-  hang. The launcher also accepts arguments
-  (`waydroid-launcher app launch org.smarttube.stable`) if you want a one-tap
-  SmartTube tile — but see the back-button caveat below.
+  hang.
 - **Leave Waydroid with the Steam button → Exit Game, never Android's own
   shutdown.** Powering Android off from the TV UI stops Android but leaves
   `cage` — the kiosk compositor the launcher wraps Waydroid in — running with no
@@ -232,12 +232,11 @@ The setup recipes are safe to re-run.
 - **SmartTube ships no x86_64 APK** (only arm64-v8a, armeabi-v7a, universal and
   32-bit x86). The Android TV image bundles ARM translation, which is what makes
   the arm64 build work here.
-- **The back button** does not work when SmartTube is started via
-  `waydroid app launch`. Start it from the Android TV launcher instead.
-  Starting `show-full-ui` first and then bringing SmartTube forward was also
-  tested on 2026-09-20: injected host Escape and Alt+Left did not leave the
-  SmartTube player. A direct SmartTube Steam tile is therefore deliberately
-  not shipped; remote-only navigation must remain complete.
+- **The back button is bridged specifically for Android.** Steam needs the
+  Shield remote's host key to remain Escape. While Waydroid runs, the remote
+  macro service additionally emits Linux `KEY_BACK`, which Android recognizes
+  as its real Back action. This was verified from a playing SmartTube video
+  back to its Home screen on 2026-09-20. Escape still reaches Steam and Kodi.
 - **Widevine L3** caps DRM-protected content at 1080p. YouTube's ordinary
   streams are not Widevine-protected so 4K should be fine — but verify it rather
   than assume.

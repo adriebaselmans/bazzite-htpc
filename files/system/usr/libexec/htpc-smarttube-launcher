@@ -1,0 +1,43 @@
+#!/usr/bin/bash
+# Start Android TV in Bazzite's supported cage wrapper, then bring SmartTube to
+# the foreground. Keeping show-full-ui as the owning Waydroid process preserves
+# the normal controller/input path; htpc-shield-remote-macros supplies Android's
+# real KEY_BACK event for the remote's host-level Escape key.
+set -euo pipefail
+
+launcher_pid=""
+
+cleanup() {
+    trap - EXIT INT TERM HUP
+    if pgrep -x cage >/dev/null 2>&1; then
+        pkill -TERM -x cage || true
+    fi
+    if [[ -n "$launcher_pid" ]]; then
+        wait "$launcher_pid" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT INT TERM HUP
+
+/usr/bin/waydroid-launcher show-full-ui &
+launcher_pid=$!
+
+ready=0
+for _ in {1..90}; do
+    if ! kill -0 "$launcher_pid" 2>/dev/null; then
+        echo "Waydroid launcher exited before Android was ready." >&2
+        exit 1
+    fi
+    if waydroid app list 2>/dev/null | grep -q 'packageName: org.smarttube.stable'; then
+        ready=1
+        break
+    fi
+    sleep 1
+done
+
+if [[ "$ready" -ne 1 ]]; then
+    echo "SmartTube did not become available within 90 seconds." >&2
+    exit 1
+fi
+
+waydroid app launch org.smarttube.stable
+wait "$launcher_pid"

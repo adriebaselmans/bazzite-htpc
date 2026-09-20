@@ -1,5 +1,5 @@
 [Unit]
-Description=Launch Kodi from the Shield remote Netflix button
+Description=HTPC actions for the NVIDIA Shield remote
 
 [Service]
 ExecStart=/usr/libexec/htpc-shield-remote-macros
