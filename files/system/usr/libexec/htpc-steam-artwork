@@ -27,13 +27,16 @@ def main():
 
     for shortcut in data.get("shortcuts", {}).values():
         name = shortcut.get("appname", "").lower()
-        if name not in {"freetube", "spotify"}:
+        if name not in {"freetube", "youtube", "spotify"}:
             continue
         try:
             appid = int(shortcut["appid"]) & 0xFFFFFFFF
         except (KeyError, TypeError, ValueError):
             continue
-        source = Path("/usr/share/htpc-artwork") / f"{name}.svg"
+        # Existing installations may still have the old native YouTube
+        # shortcut named "Youtube". Give it the same artwork as FreeTube.
+        source_name = "freetube" if name == "youtube" else name
+        source = Path("/usr/share/htpc-artwork") / f"{source_name}.svg"
         subprocess.run(["magick", str(source), "-resize", "920x430!",
                         str(grid / f"{appid}.png")], check=True)
         subprocess.run(["magick", str(source), "-resize", "600x900^",

@@ -129,7 +129,8 @@ ujust htpc-steam-artwork
 ```
 
 The result is a native **FreeTube** tile in Game Mode. The artwork helper also
-repairs the existing Spotify tile with a capsule, portrait poster and icon.
+repairs existing `Youtube`/FreeTube and Spotify tiles with a capsule, portrait
+poster and icon.
 Restart Steam after the artwork command; Steam caches `shortcuts.vdf` while it
 is running. If SteamTinkerLaunch is unavailable, add FreeTube manually as a
 non-Steam game:
