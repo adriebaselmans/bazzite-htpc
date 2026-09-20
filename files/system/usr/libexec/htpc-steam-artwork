@@ -43,7 +43,8 @@ def main():
                         grid / f"{appid}p.png")
         shutil.copyfile(source.with_name(source.name + "_icon.png"),
                         grid / f"{appid}_icon.png")
-        shortcut["icon"] = str(grid / f"{appid}_icon.png")
+        shortcut["icon"] = str(Path("/usr/share/htpc-artwork") /
+                                f"{source_name}_squared.png")
         changed = True
         print(f"    Artwork applied to {shortcut.get('appname')} ({appid}).")
 

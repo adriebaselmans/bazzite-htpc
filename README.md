@@ -132,6 +132,10 @@ The result is a native **FreeTube** tile in Game Mode. If an older `Youtube`
 tile already exists, the migration reuses it instead of creating a duplicate.
 The artwork helper also repairs existing `Youtube`/FreeTube and Spotify tiles
 with a capsule, portrait poster and icon.
+
+The square app icons are shipped as
+`files/system/usr/share/htpc-artwork/freetube_squared.png` and
+`files/system/usr/share/htpc-artwork/spotify_squared.png` (both 256×256).
 Restart Steam after the artwork command; Steam caches `shortcuts.vdf` while it
 is running. If SteamTinkerLaunch is unavailable, add FreeTube manually as a
 non-Steam game:
