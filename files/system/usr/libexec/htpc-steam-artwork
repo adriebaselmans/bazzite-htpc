@@ -2,6 +2,7 @@
 """Install consistent Game Mode artwork for HTPC streaming shortcuts."""
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import sys
 
@@ -36,15 +37,12 @@ def main():
         # Existing installations may still have the old native YouTube
         # shortcut named "Youtube". Give it the same artwork as FreeTube.
         source_name = "freetube" if name == "youtube" else name
-        source = Path("/usr/share/htpc-artwork") / f"{source_name}.svg"
-        subprocess.run(["magick", str(source), "-resize", "920x430!",
-                        str(grid / f"{appid}.png")], check=True)
-        subprocess.run(["magick", str(source), "-resize", "600x900^",
-                        "-gravity", "center", "-extent", "600x900",
-                        str(grid / f"{appid}p.png")], check=True)
-        subprocess.run(["magick", str(source), "-resize", "256x256^",
-                        "-gravity", "center", "-extent", "256x256",
-                        str(grid / f"{appid}_icon.png")], check=True)
+        source = Path("/usr/share/htpc-artwork") / source_name
+        shutil.copyfile(source.with_suffix(".png"), grid / f"{appid}.png")
+        shutil.copyfile(source.with_name(source.name + "_p.png"),
+                        grid / f"{appid}p.png")
+        shutil.copyfile(source.with_name(source.name + "_icon.png"),
+                        grid / f"{appid}_icon.png")
         shortcut["icon"] = str(grid / f"{appid}_icon.png")
         changed = True
         print(f"    Artwork applied to {shortcut.get('appname')} ({appid}).")

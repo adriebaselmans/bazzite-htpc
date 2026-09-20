@@ -123,8 +123,8 @@ ujust htpc-steam-artwork
 
 The Steam artwork helper updates the FreeTube (and older `Youtube`) and Spotify shortcuts. It
 must run while Steam is closed because Steam caches and rewrites its binary
-`shortcuts.vdf` file. Artwork is generated from the image's SVG assets using
-ImageMagick; no artwork is downloaded at runtime.
+`shortcuts.vdf` file. Artwork is shipped as PNG assets in the image and copied
+into Steam's grid directory; no artwork is downloaded or converted at runtime.
 
 ### Steam, which is the shell
 
