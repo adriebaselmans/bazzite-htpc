@@ -105,27 +105,6 @@ They are stored in `~/.local/share/flatpak/overrides/<app-id>` (user) or
 `/var/lib/flatpak/overrides/` (system) — both under mutable state, neither
 carried by the image, which is why the locale fix is a `ujust` recipe.
 
-### Native YouTube
-
-FreeTube is a system Flatpak in the image (`io.freetubeapp.FreeTube`). It is a
-native Linux alternative to SmartTube: it does not start Waydroid or Android
-TV. Its user data lives at `~/.var/app/io.freetubeapp.FreeTube/` and survives
-image upgrades because it is in the user's home directory.
-
-The normal migration path on an existing machine is:
-
-```bash
-ujust htpc-freetube
-# close Steam completely first
-ujust htpc-steam-freetube
-ujust htpc-steam-artwork
-```
-
-The Steam artwork helper updates the FreeTube (and older `Youtube`) and Spotify shortcuts. It
-must run while Steam is closed because Steam caches and rewrites its binary
-`shortcuts.vdf` file. Artwork is shipped as PNG assets in the image and copied
-into Steam's grid directory; no artwork is downloaded or converted at runtime.
-
 ### Steam, which is the shell
 
 Steam Game Mode is the boot target, so Steam owns the home screen and launches
