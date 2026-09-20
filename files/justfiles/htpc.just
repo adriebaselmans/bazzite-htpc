@@ -1,4 +1,4 @@
-# HTPC setup for this image: Waydroid + SmartTube, Kodi + xstreamflex.
+# HTPC setup for this image: Waydroid + SmartTube, native FreeTube, Kodi + xstreamflex.
 #
 # These live here rather than in the image because none of it can be baked in:
 # Waydroid downloads its Android system/vendor images at init time, and Steam's
@@ -16,8 +16,9 @@ WAYDROID_OTA_VENDOR := "https://waydroid-atv.github.io/ota/a13-tv/vendor"
 XSTREAMFLEX_REPO := "https://github.com/adriebaselmans/xstreamflex"
 SMARTTUBE_API := "https://api.github.com/repos/yuliskov/SmartTube/releases?per_page=30"
 
-# Set up everything: Waydroid + SmartTube, Kodi + xstreamflex, Steam entry.
-setup-htpc: htpc-waydroid htpc-smarttube htpc-kodi-locale htpc-xstreamflex htpc-steam-shortcut
+# Set up everything: Waydroid + SmartTube, native FreeTube, Kodi + xstreamflex,
+# and Steam entries.
+setup-htpc: htpc-waydroid htpc-smarttube htpc-freetube htpc-kodi-locale htpc-xstreamflex htpc-steam-shortcut
     @echo ""
     @echo "HTPC setup done. Remaining manual steps:"
     @echo "  - pair your remote/controller:  ujust htpc-remote"
@@ -94,6 +95,19 @@ htpc-smarttube:
     echo "    Start it from the Android TV launcher, not 'waydroid app launch' -"
     echo "    the back button does not work when launched directly."
 
+# FreeTube is native Linux: no Waydroid or Android TV layer is involved.
+htpc-freetube:
+    #!/usr/bin/bash
+    set -euo pipefail
+
+    if flatpak info io.freetubeapp.FreeTube >/dev/null 2>&1; then
+        echo "==> Native FreeTube is installed."
+    else
+        echo "==> Installing native FreeTube from Flathub..."
+        flatpak install --system --noninteractive flathub io.freetubeapp.FreeTube
+    fi
+    echo "    FreeTube data lives in ~/.var/app/io.freetubeapp.FreeTube/"
+
 # Stop Steam's LC_ALL=C from giving Kodi an ASCII filesystem encoding.
 htpc-kodi-locale:
     #!/usr/bin/bash
@@ -149,7 +163,8 @@ htpc-xstreamflex ref="main":
     echo "==> Done. Kodi will pick it up on next start."
     echo "    script.module.requests installs itself from Kodi's own repo."
 
-# Add Kodi and Waydroid to Steam so both are reachable from Game Mode.
+# Add Kodi, native FreeTube and Waydroid to Steam so all are reachable from
+# Game Mode. FreeTube stays outside Waydroid: it is a normal Linux Flatpak.
 htpc-steam-shortcut:
     #!/usr/bin/bash
     set -euo pipefail
@@ -164,6 +179,13 @@ htpc-steam-shortcut:
             --appname="Kodi" \
             --exepath="/usr/bin/flatpak" \
             --launchoptions="run tv.kodi.Kodi" \
+            || echo "    steamtinkerlaunch failed - add it by hand (see below)."
+
+        echo "==> Adding native FreeTube via steamtinkerlaunch..."
+        steamtinkerlaunch addnonsteamgame \
+            --appname="FreeTube" \
+            --exepath="/usr/bin/flatpak" \
+            --launchoptions="run io.freetubeapp.FreeTube" \
             || echo "    steamtinkerlaunch failed - add it by hand (see below)."
 
         # /usr/bin/waydroid-launcher is Bazzite's own wrapper: it runs Waydroid
@@ -190,9 +212,50 @@ htpc-steam-shortcut:
         echo "               'run tv.kodi.Kodi' set by hand."
         echo "    Waydroid - not in that list, so: Browse, switch the filter to"
         echo "               All Files, and pick /usr/bin/waydroid-launcher."
+        echo "    FreeTube - add /usr/bin/flatpak and set Launch Options to:"
+        echo "               run io.freetubeapp.FreeTube"
         echo ""
-        echo "    Neither appears in Game Mode until you do this."
+        echo "    These entries appear in Game Mode after restarting Steam."
     fi
+
+    if [[ -x /usr/libexec/htpc-steam-artwork ]]; then
+        /usr/libexec/htpc-steam-artwork
+    fi
+
+# Add only the native YouTube tile to an already configured HTPC. This avoids
+# re-adding the existing Kodi/Waydroid shortcuts on machines that ran the old
+# setup already.
+htpc-steam-freetube:
+    #!/usr/bin/bash
+    set -euo pipefail
+    if ! command -v steamtinkerlaunch >/dev/null 2>&1; then
+        echo "Install/use SteamTinkerLaunch, or add FreeTube manually:" >&2
+        echo "  executable: /usr/bin/flatpak" >&2
+        echo "  options:    run io.freetubeapp.FreeTube" >&2
+        exit 1
+    fi
+    if find "$HOME/.local/share/Steam/userdata" -name shortcuts.vdf \
+        -type f -exec grep -a -q -m1 'FreeTube' {} \; 2>/dev/null; then
+        echo "==> FreeTube is already in Steam."
+    else
+        echo "==> Adding native FreeTube to Steam..."
+        steamtinkerlaunch addnonsteamgame \
+            --appname="FreeTube" \
+            --exepath="/usr/bin/flatpak" \
+            --launchoptions="run io.freetubeapp.FreeTube"
+    fi
+    /usr/libexec/htpc-steam-artwork
+
+# Refresh the custom capsule/poster/icon artwork for FreeTube and Spotify.
+# Steam must be fully closed because it caches and rewrites shortcuts.vdf.
+htpc-steam-artwork:
+    #!/usr/bin/bash
+    set -euo pipefail
+    if pgrep -x steam >/dev/null 2>&1; then
+        echo "Close Steam completely, then run 'ujust htpc-steam-artwork'." >&2
+        exit 1
+    fi
+    /usr/libexec/htpc-steam-artwork
 
 # Pair a Bluetooth remote or controller and point at the Kodi keymap.
 htpc-remote:

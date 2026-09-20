@@ -2,7 +2,8 @@
 
 A custom [Bazzite](https://bazzite.gg) image for a living-room box: Steam Game
 Mode as the shell, [Kodi](https://kodi.tv) with the
-[xstreamflex](https://github.com/adriebaselmans/xstreamflex) add-on for IPTV, and
+[xstreamflex](https://github.com/adriebaselmans/xstreamflex) add-on for IPTV,
+native [FreeTube](https://github.com/FreeTubeApp/FreeTube) for YouTube, and
 [SmartTube](https://github.com/yuliskov/SmartTube) running in Waydroid's Android
 TV image.
 
@@ -21,7 +22,7 @@ The setup is split across two layers, and the split is not cosmetic:
 | Layer | Contains | Why here |
 | --- | --- | --- |
 | **Image** (`recipes/recipe.yml`) | Kodi + Flatseal flatpaks, the `ujust` recipes | Declarative, reproducible, survives a reinstall, updates itself |
-| **`ujust setup-htpc`** (`files/justfiles/htpc.just`) | Waydroid init, SmartTube, xstreamflex, Steam entry | Waydroid downloads its Android images at init time; Steam/Kodi config lives in `$HOME`. Neither can be baked into a system image. |
+| **`ujust setup-htpc`** (`files/justfiles/htpc.just`) | Waydroid init, SmartTube, native FreeTube, xstreamflex, Steam entries | Waydroid downloads its Android images at init time; Steam/Kodi config lives in `$HOME`. Neither can be baked into a system image. |
 
 `base-image` is **`bazzite-deck`** — the Handheld/HTPC variant, which boots
 straight into Gamescope Game Mode. Deliberately not a `-nvidia` variant:
@@ -107,6 +108,40 @@ ujust setup-htpc
 
 Sanity check that the image carries what it should: `ujust --list` should show
 `setup-htpc`.
+
+### Native YouTube with FreeTube
+
+FreeTube is included as a native Linux Flatpak. It runs directly on Bazzite,
+without Waydroid or Android TV, and is intended for the ad-free YouTube
+workflow on this HTPC. Its data is kept in
+`~/.var/app/io.freetubeapp.FreeTube/`.
+
+The full `ujust setup-htpc` command installs FreeTube and adds it to Steam. On
+an existing installation that already has Kodi and Waydroid configured, use
+the smaller migration path instead:
+
+```bash
+ujust htpc-freetube
+
+# Close Steam completely before changing its non-Steam shortcuts.
+ujust htpc-steam-freetube
+ujust htpc-steam-artwork
+```
+
+The result is a native **FreeTube** tile in Game Mode. The artwork helper also
+repairs the existing Spotify tile with a capsule, portrait poster and icon.
+Restart Steam after the artwork command; Steam caches `shortcuts.vdf` while it
+is running. If SteamTinkerLaunch is unavailable, add FreeTube manually as a
+non-Steam game:
+
+```text
+Executable:    /usr/bin/flatpak
+Launch options: run io.freetubeapp.FreeTube
+```
+
+FreeTube is deliberately separate from SmartTube. SmartTube remains available
+through Waydroid for the Android-TV interface, account integration and
+remote-focused experience; FreeTube is the lightweight native Linux option.
 
 ## Nintendo Switch emulation (Eden, via EmuDeck)
 
@@ -196,12 +231,18 @@ tab.
 | `ujust setup-htpc` | Everything below except `htpc-remote` |
 | `ujust htpc-waydroid` | Init Waydroid with the Android TV image (`ujust htpc-waydroid 1` forces a clean re-init) |
 | `ujust htpc-smarttube` | Install the latest **stable** SmartTube (arm64) |
+| `ujust htpc-freetube` | Check/install native FreeTube (no Waydroid) |
 | `ujust htpc-kodi-locale` | Stop Kodi inheriting Steam's `LC_ALL=C` (breaks accented filenames) |
 | `ujust htpc-xstreamflex` | Build and install the xstreamflex add-on into the Kodi flatpak |
-| `ujust htpc-steam-shortcut` | Add Kodi and Waydroid to Steam so Game Mode can see them |
+| `ujust htpc-steam-shortcut` | Add Kodi, FreeTube and Waydroid to Steam so Game Mode can see them |
+| `ujust htpc-steam-freetube` | Add only FreeTube to an already configured Steam setup |
+| `ujust htpc-steam-artwork` | Apply custom FreeTube and Spotify Steam artwork |
 | `ujust htpc-remote` | Pair a Bluetooth remote/controller |
 
-All of them are safe to re-run.
+The install and artwork recipes are safe to re-run. On an already configured
+machine prefer `htpc-steam-freetube` over `htpc-steam-shortcut`; the latter is
+the complete initial shortcut setup and may add duplicate Steam entries when
+run repeatedly.
 
 ## Known caveats
 

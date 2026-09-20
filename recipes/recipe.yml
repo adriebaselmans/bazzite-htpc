@@ -4,7 +4,7 @@
 name: bazzite-htpc
 description: >-
   Bazzite deck (Steam Game Mode) as a living-room box: Kodi with the xstreamflex
-  add-on for IPTV, and SmartTube via Waydroid's Android TV image.
+  add-on for IPTV, native FreeTube for YouTube, and SmartTube via Waydroid.
 
 # bazzite-deck is the Handheld/HTPC variant - KDE + Gamescope Game Mode, Mesa.
 # Deliberately NOT a -nvidia variant: Waydroid does not work on Nvidia at all,
@@ -28,6 +28,7 @@ modules:
         install:
           - tv.kodi.Kodi
           - com.github.tchx84.Flatseal
+          - io.freetubeapp.FreeTube
           # Deliberately no Cemu or Steam ROM Manager here: EmuDeck installs and
           # manages both, and shipping flatpak copies alongside gives two of each
           # with separate configs - which is how duplicate Steam shortcuts
@@ -52,6 +53,7 @@ modules:
     install:
       packages:
         - gh
+        - ImageMagick
 
   # Ships files/justfiles/*.just as `ujust` commands. This is what carries every
   # step that cannot live in an image: Waydroid downloads its Android images at

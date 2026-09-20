@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="430" viewBox="0 0 920 430">
+  <rect width="920" height="430" rx="24" fill="#101827"/>
+  <circle cx="245" cy="215" r="124" fill="#f97316"/>
+  <path d="M214 150l103 65-103 65z" fill="#fff7ed"/>
+  <text x="420" y="235" fill="#fff7ed" font-family="sans-serif" font-size="78" font-weight="700">FreeTube</text>
+</svg>

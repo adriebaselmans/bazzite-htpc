@@ -1,8 +1,8 @@
 # bazzite-htpc — context for Claude
 
 A custom Bazzite image turning a mini-PC into a living-room box: HTPC (Kodi with
-the `xstreamflex` IPTV add-on, SmartTube via Waydroid) plus Nintendo Switch
-emulation (Eden via EmuDeck), with Steam Game Mode as the shell.
+the `xstreamflex` IPTV add-on, native FreeTube, and SmartTube via Waydroid) plus
+Nintendo Switch emulation (Eden via EmuDeck), with Steam Game Mode as the shell.
 
 Built to replace an ageing NVIDIA Shield that had to be rebooted to keep
 streaming. Read `README.md` first — it carries the install path and the traps.
@@ -30,6 +30,12 @@ resort — it can block OS upgrades until the package is removed.
 
 **No emulator or Steam ROM Manager flatpaks in the image.** EmuDeck installs
 both. Shipping duplicates causes duplicate Steam shortcuts.
+
+**FreeTube is intentionally a native system Flatpak.** It is the no-Waydroid
+YouTube option and is added to Steam as a non-Steam shortcut. SmartTube remains
+available through Waydroid for its Android-TV interface. The migration commands
+for an existing installation are `ujust htpc-freetube`, then with Steam fully
+closed `ujust htpc-steam-freetube` and `ujust htpc-steam-artwork`.
 
 ## Traps that cost real time here
 
