@@ -241,6 +241,13 @@ Steam target. The default shortcut stays the plain launcher anyway, because
 SmartTube started via `app launch` has the broken back button documented in the
 README.
 
+The apparent workaround — start `waydroid-launcher show-full-ui` first, then
+run `waydroid app launch org.smarttube.stable` — was tested on 2026-09-20. It
+does open SmartTube without showing the launcher, but host Escape and Alt+Left
+do not leave the SmartTube player. Do not ship a direct tile unless a later
+Waydroid/SmartTube version passes the same back-navigation test with the NVIDIA
+Shield 2019 remote.
+
 Eden performance on this hardware (Radeon 780M / Ryzen 7 H255) has not been
 measured.
 

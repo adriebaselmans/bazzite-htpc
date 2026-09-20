@@ -234,6 +234,10 @@ The setup recipes are safe to re-run.
   the arm64 build work here.
 - **The back button** does not work when SmartTube is started via
   `waydroid app launch`. Start it from the Android TV launcher instead.
+  Starting `show-full-ui` first and then bringing SmartTube forward was also
+  tested on 2026-09-20: injected host Escape and Alt+Left did not leave the
+  SmartTube player. A direct SmartTube Steam tile is therefore deliberately
+  not shipped; remote-only navigation must remain complete.
 - **Widevine L3** caps DRM-protected content at 1080p. YouTube's ordinary
   streams are not Widevine-protected so 4K should be fine — but verify it rather
   than assume.
