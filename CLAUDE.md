@@ -239,8 +239,14 @@ prompts for a password. The direct tile uses
 process and then brings SmartTube forward. Host Escape and Alt+Left are not
 Android Back. The user remote macro service emits an additional Linux
 `KEY_BACK` while Waydroid's surfaceflinger runs. This exact path was verified
-from a playing SmartTube video back to Home on 2026-09-20. Keep the original
-Escape event because Steam Game Mode needs it and ignores KEY_BACK.
+from a playing SmartTube video back to Home on 2026-09-20.
+
+The remote service grabs and mirrors the Shield remote so the same physical
+press does not reach Android as KEY_BACK and Steam as Escape simultaneously.
+Outside Waydroid, Escape is mirrored unchanged. In Waydroid, short Back emits
+only KEY_BACK and a >=1.2-second hold terminates the direct app wrapper, whose
+cleanup closes cage and returns to Steam. Do not restore dual delivery: it
+causes races and leaves the user on Android TV Home or Steam's stuck spinner.
 
 Direct Android tiles (currently SmartTube and Spotify TV) go through
 `/usr/libexec/htpc-waydroid-app-launcher`. Do not point Steam straight at

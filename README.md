@@ -240,9 +240,13 @@ TV Home first.
   the arm64 build work here.
 - **The back button is bridged specifically for Android.** Steam needs the
   Shield remote's host key to remain Escape. While Waydroid runs, the remote
-  macro service additionally emits Linux `KEY_BACK`, which Android recognizes
+  macro service emits Linux `KEY_BACK`, which Android recognizes
   as its real Back action. This was verified from a playing SmartTube video
-  back to its Home screen on 2026-09-20. Escape still reaches Steam and Kodi.
+  back to its Home screen on 2026-09-20. Outside Waydroid, Escape still reaches
+  Steam and Kodi.
+  While Waydroid is active, a short Back press is sent only to Android; hold
+  Back for about 1.2 seconds to close the complete tile and return to Steam.
+  This prevents repeated Back presses from ending on Android TV Home.
 - **Android's Shutdown no longer strands direct app tiles on black.** The
   shared launcher watches Android's `surfaceflinger` process and closes `cage`
   when Android stops. Steam's *Exit Game* remains the preferred exit route.
