@@ -1,0 +1,56 @@
+#!/usr/bin/python3
+"""Terminate a Waydroid tile when keyboard Escape/Backspace is held."""
+import os
+import select
+import signal
+import sys
+import time
+
+import evdev
+from evdev import ecodes
+
+HOLD_SECONDS = 1.2
+EXIT_KEYS = {ecodes.KEY_ESC, ecodes.KEY_BACKSPACE, ecodes.KEY_BACK}
+
+
+def main():
+    if len(sys.argv) != 2:
+        return 2
+    parent = int(sys.argv[1])
+    devices = []
+    for path in evdev.list_devices():
+        try:
+            device = evdev.InputDevice(path)
+            keys = device.capabilities().get(ecodes.EV_KEY, [])
+            if EXIT_KEYS.intersection(keys):
+                devices.append(device)
+        except OSError:
+            continue
+    pressed = {}
+    while devices:
+        ready, _, _ = select.select(devices, [], [], 1)
+        if not os.path.exists(f"/proc/{parent}"):
+            return 0
+        for device in ready:
+            try:
+                events = device.read()
+            except OSError:
+                devices.remove(device)
+                continue
+            for event in events:
+                if event.type != ecodes.EV_KEY or event.code not in EXIT_KEYS:
+                    continue
+                key = (device.fd, event.code)
+                if event.value == 1:
+                    pressed[key] = time.monotonic()
+                elif event.value in {0, 2} and key in pressed:
+                    if time.monotonic() - pressed[key] >= HOLD_SECONDS:
+                        os.kill(parent, signal.SIGTERM)
+                        return 0
+                    if event.value == 0:
+                        pressed.pop(key, None)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

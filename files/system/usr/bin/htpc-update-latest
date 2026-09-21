@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+# Install the newest signed bazzite-htpc image and reboot into it.
+set -euo pipefail
+
+expected="ostree-image-signed:docker://ghcr.io/adriebaselmans/bazzite-htpc:latest"
+current="$(rpm-ostree status --json | jq -r '.deployments[] | select(.booted) | .["container-image-reference"]')"
+
+if [[ "$current" != "$expected" ]]; then
+    echo "Refusing to update an unexpected image reference:" >&2
+    echo "  $current" >&2
+    echo "Expected:" >&2
+    echo "  $expected" >&2
+    exit 1
+fi
+
+echo "==> Installing latest signed bazzite-htpc image..."
+rpm-ostree upgrade
+echo "==> Upgrade staged successfully; rebooting now."
+systemctl reboot

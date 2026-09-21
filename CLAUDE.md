@@ -220,6 +220,10 @@ both. Shipping duplicates causes duplicate Steam shortcuts.
   or the machine reports "A signature was required".
 - The build pushes *before* it signs. If signing fails, `:latest` is updated but
   unsigned and the machine cannot upgrade. Re-run the workflow.
+- **Use `/usr/bin/htpc-update-latest` for all normal image upgrades.** It
+  verifies the signed `:latest` origin, runs `rpm-ostree upgrade`, and reboots
+  only after staging succeeds. Do not hand-type the upgrade/reboot sequence in
+  future maintenance unless diagnosing the script itself.
 
 ## Still unverified
 

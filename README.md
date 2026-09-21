@@ -96,6 +96,14 @@ signature verification — which is the whole point of the cosign setup.
 From then on the machine updates along with this image, and the previous version
 stays in the boot menu to roll back to.
 
+For every later update, use the image's single update script. It verifies that
+the machine still tracks this repository's signed `:latest` image, stages the
+upgrade, and reboots only after a successful deployment:
+
+```bash
+htpc-update-latest
+```
+
 ### 5. Set up the HTPC layer
 
 **Start Kodi once first** — otherwise `~/.var/app/tv.kodi.Kodi` does not exist
@@ -194,6 +202,7 @@ tab.
 | Command | Does |
 | --- | --- |
 | `ujust setup-htpc` | Everything below except `htpc-remote` |
+| `htpc-update-latest` | Install the newest signed image and reboot |
 | `ujust htpc-waydroid` | Init Waydroid with the Android TV image (`ujust htpc-waydroid 1` forces a clean re-init) |
 | `ujust htpc-smarttube` | Install the latest **stable** SmartTube (arm64) |
 | `ujust htpc-remote-service` | Enable Shield remote macros, including Android Back |
@@ -247,6 +256,8 @@ TV Home first.
   While Waydroid is active, a short Back press is sent only to Android; hold
   Back for about 1.2 seconds to close the complete tile and return to Steam.
   This prevents repeated Back presses from ending on Android TV Home.
+  Without Bluetooth, holding keyboard Escape or Backspace for the same duration
+  provides an in-session fallback; the monitor exists only while Waydroid runs.
 - **Android's Shutdown no longer strands direct app tiles on black.** The
   shared launcher watches Android's `surfaceflinger` process and closes `cage`
   when Android stops. Steam's *Exit Game* remains the preferred exit route.
